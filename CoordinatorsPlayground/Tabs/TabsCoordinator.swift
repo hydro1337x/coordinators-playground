@@ -38,12 +38,16 @@ class TabsCoordinatorStore: ObservableObject, Routable {
     @Published var tab: Tab
     private var stores: [Tab: AnyObject] = [:]
     
-    var onFinished: () -> Void = {}
+    var onAccountButtonTapped: () -> Void = {}
+    var onLoginButtonTapped: () -> Void = {}
     
-    init(selectedTab: Tab) {
+    private let authStateStore: AuthStateStore
+    
+    init(selectedTab: Tab, authStateStore: AuthStateStore) {
+        self.authStateStore = authStateStore
         self.tab = selectedTab
         
-        Tab.allCases.forEach(makeStore(for:))
+        Tab.allCases.forEach { makeStore(for: $0) }
     }
     
     deinit {
@@ -57,10 +61,12 @@ class TabsCoordinatorStore: ObservableObject, Routable {
     private func makeStore(for tab: Tab) {
         switch tab {
         case .home:
-            let store = HomeCoordinatorStore(path: [])
-            store.onFinished = { [weak self] in
-                // Logout
-                self?.onFinished()
+            let store = HomeCoordinatorStore(path: [], authStateStore: authStateStore)
+            store.onAccountButtonTapped = { [weak self] in
+                self?.onAccountButtonTapped()
+            }
+            store.onLoginButtonTapped = { [weak self] in
+                self?.onLoginButtonTapped()
             }
             stores[tab] = store
         case .second:
@@ -76,11 +82,11 @@ class TabsCoordinatorStore: ObservableObject, Routable {
         self.tab = tab
     }
     
-    func route(deepLinks: [DeepLink]) {
-        guard let deepLink = deepLinks.first else { return }
-        let deepLinks = Array(deepLinks.dropFirst())
+    func handle(routes: [Route]) {
+        guard let route = routes.first else { return }
+        let routes = Array(routes.dropFirst())
         
-        switch deepLink {
+        switch route {
         case .home:
             show(tab: .home)
         default:
@@ -90,6 +96,6 @@ class TabsCoordinatorStore: ObservableObject, Routable {
         stores
             .values
             .compactMap { $0 as? Routable }
-            .forEach { $0.route(deepLinks: deepLinks) }
+            .forEach { $0.handle(routes: routes) }
     }
 }

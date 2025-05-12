@@ -24,31 +24,46 @@ struct HomeCoordinator: View {
                         makeView(for: path, with: StoreA.self) { store in
                             ScreenA(store: store)
                                 .navigationTitle(store.title)
-                                .toolbar(content: logoutToolbarButton)
+                                .toolbar(content: toolbarButton)
                         }
                     case .screenB:
                         makeView(for: path, with: StoreB.self) { store in
                             ScreenB(store: store)
                                 .navigationTitle(store.title)
-                                .toolbar(content: logoutToolbarButton)
+                                .toolbar(content: toolbarButton)
                         }
                     case .screenC:
                         makeView(for: path, with: StoreC.self) { store in
                             ScreenC(store: store)
                                 .navigationTitle(store.title)
-                                .toolbar(content: logoutToolbarButton)
+                                .toolbar(content: toolbarButton)
                         }
                     }
                 }
                 .navigationTitle(store.homeScreenStore.title)
-                .toolbar(content: logoutToolbarButton)
+                .toolbar(content: toolbarButton)
+        }
+        .task {
+            await store.bindObservers()
         }
     }
-    
-    func logoutToolbarButton() -> some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button("Logout") {
-                store.handleLogoutButtonTapped()
+
+    func toolbarButton() -> some ToolbarContent {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            switch store.authState {
+            case .loggedIn:
+                Button("Account") {
+                    store.handleAccountButtonTapped()
+                }
+            case .loginInProgress:
+                ProgressView()
+                    .progressViewStyle(.circular)
+            case .loggedOut:
+                Button("Login") {
+                    store.handleLoginButtonTapped()
+                }
+            case nil:
+                EmptyView()
             }
         }
     }
@@ -75,13 +90,19 @@ class HomeCoordinatorStore: ObservableObject, Routable {
     }
     
     @Published private(set) var path: [Path] = []
-    let homeScreenStore: HomeScreenStore = .init()
+    @Published private(set) var authState: AuthState?
     private var stores: [Path: AnyObject] = [:]
+    let homeScreenStore: HomeScreenStore
     
-    var onFinished: () -> Void = {}
+    var onAccountButtonTapped: () -> Void = {}
+    var onLoginButtonTapped: () -> Void = {}
     
-    init(path: [Path]) {
-        path.forEach(makeStore(for:))
+    private let authStateStore: AuthStateStore
+    
+    init(path: [Path], authStateStore: AuthStateStore) {
+        self.authStateStore = authStateStore
+        self.homeScreenStore = HomeScreenStore()
+        path.forEach { makeStore(for:$0) }
         
         self.path = path
         
@@ -103,12 +124,23 @@ class HomeCoordinatorStore: ObservableObject, Routable {
             let poppedPath = Array(path.suffix(from: newPath.count))
             poppedPath.forEach { stores[$0] = nil }
         }
-            
+        
         path = newPath
     }
     
-    func handleLogoutButtonTapped() {
-        onFinished()
+    func handleAccountButtonTapped() {
+        onAccountButtonTapped()
+    }
+    
+    func handleLoginButtonTapped() {
+        onLoginButtonTapped()
+    }
+    
+    @MainActor
+    func bindObservers() async {
+        for await state in await authStateStore.values {
+            authState = state
+        }
     }
     
     private func makeStore(for path: Path) {
@@ -157,21 +189,21 @@ class HomeCoordinatorStore: ObservableObject, Routable {
         stores[lastPath] = nil
     }
     
-    func route(deepLinks: [DeepLink]) {
-        guard let deepLink = deepLinks.first else { return }
-        let deepLinks = Array(deepLinks.dropFirst())
+    func handle(routes: [Route]) {
+        guard let route = routes.first else { return }
+        let routes = Array(routes.dropFirst())
         
         // Recursively execute route(deepLinks:) to check if there are remaining screens for stack pushing
-        switch deepLink {
+        switch route {
         case .screenA:
             push(path: .screenA)
-            route(deepLinks: deepLinks)
+            handle(routes: routes)
         case .screenB(id: let id):
             push(path: .screenB(id: id))
-            route(deepLinks: deepLinks)
+            handle(routes: routes)
         case .screenC:
             push(path: .screenC)
-            route(deepLinks: deepLinks)
+            handle(routes: routes)
         default:
             break
         }
@@ -179,7 +211,7 @@ class HomeCoordinatorStore: ObservableObject, Routable {
         stores
             .values
             .compactMap { $0 as? Routable }
-            .forEach { $0.route(deepLinks: deepLinks) }
+            .forEach { $0.handle(routes: routes) }
     }
 }
 
