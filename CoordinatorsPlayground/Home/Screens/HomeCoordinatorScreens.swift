@@ -22,6 +22,7 @@ struct HomeScreen: View {
     }
 }
 
+@MainActor
 class HomeScreenStore: ObservableObject {
     let title: String = "Home"
     var onButtonTap: () -> Void = {}
@@ -41,6 +42,7 @@ struct ScreenA: View {
     }
 }
 
+@MainActor
 class StoreA: ObservableObject {
     let title: String = "ScreenA"
     var onButtonTap: () -> Void = {}
@@ -70,6 +72,7 @@ struct ScreenB: View {
     }
 }
 
+@MainActor
 class StoreB: ObservableObject {
     let title: String
     let id: Int
@@ -101,6 +104,7 @@ struct ScreenC: View {
     }
 }
 
+@MainActor
 class StoreC: ObservableObject {
     let title: String = "ScreenC"
     var onBack: () -> Void = {}

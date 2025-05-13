@@ -24,6 +24,7 @@ struct AccountCoordinator: View {
     }
 }
 
+@MainActor
 class AccountCoordinatorStore: ObservableObject {
     var onFinished: () -> Void = {}
     
@@ -37,7 +38,6 @@ class AccountCoordinatorStore: ObservableObject {
         print("Deinited: \(String(describing: self))")
     }
     
-    @MainActor
     func handleLogoutButtonTapped() async {
         await authStateStore.setState(.loggedOut)
         

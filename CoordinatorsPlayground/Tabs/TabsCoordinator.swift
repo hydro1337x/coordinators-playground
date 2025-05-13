@@ -29,6 +29,7 @@ struct TabsCoordinator: View {
     }
 }
 
+@MainActor
 class TabsCoordinatorStore: ObservableObject, Routable {
     enum Tab: CaseIterable {
         case home

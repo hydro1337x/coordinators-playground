@@ -29,6 +29,8 @@ struct AuthCoordinator: View {
     }
 }
 
+
+@MainActor
 class AuthCoordinatorStore: ObservableObject {
     @Published var isLoading = false
     
@@ -43,7 +45,6 @@ class AuthCoordinatorStore: ObservableObject {
         print("Deinited: \(String(describing: self))")
     }
     
-    @MainActor
     func bindObservers() async {
         for await state in await authStateStore.values {
             switch state {
@@ -55,7 +56,6 @@ class AuthCoordinatorStore: ObservableObject {
         }
     }
     
-    @MainActor
     func handleLoginTapped() async {
         await authStateStore.setState(.loginInProgress)
         

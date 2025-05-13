@@ -82,6 +82,7 @@ struct HomeCoordinator: View {
     }
 }
 
+@MainActor
 class HomeCoordinatorStore: ObservableObject, Routable {
     enum Path: Hashable {
         case screenA
@@ -136,7 +137,6 @@ class HomeCoordinatorStore: ObservableObject, Routable {
         onLoginButtonTapped()
     }
     
-    @MainActor
     func bindObservers() async {
         for await state in await authStateStore.values {
             authState = state
