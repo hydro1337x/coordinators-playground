@@ -83,7 +83,7 @@ class TabsCoordinatorStore: ObservableObject, Routable {
         self.tab = tab
     }
     
-    func handle(routes: [Route]) {
+    func handle(routes: [Route]) async {
         guard let route = routes.first else { return }
         let routes = Array(routes.dropFirst())
         
@@ -94,9 +94,12 @@ class TabsCoordinatorStore: ObservableObject, Routable {
             break
         }
         
-        stores
+        let routables = stores
             .values
             .compactMap { $0 as? Routable }
-            .forEach { $0.handle(routes: routes) }
+            
+        for routable in routables {
+            await routable.handle(routes: routes)
+        }
     }
 }

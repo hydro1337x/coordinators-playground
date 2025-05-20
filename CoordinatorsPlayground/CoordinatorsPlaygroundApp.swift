@@ -14,7 +14,6 @@ struct CoordinatorsPlaygroundApp: App {
     
     init() {
         store = RootCoordinatorStore(authStateStore: authStateStore)
-        store.destination
     }
     
     var body: some Scene {
@@ -26,14 +25,15 @@ struct CoordinatorsPlaygroundApp: App {
                      xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=base64encodedData"
                      Example (encode to base64)
                      [
-                       { "value": "tabs" },
                        { "value": "home" },
                        { "value": "screenA" },
                        { "value": "screenB", "parameters": { "id": "1" } },
                        { "value": "screenC" }
                      ]
                      */
-                    store.handle(routes: DeepLinkParser.parse(url))
+                    Task {
+                        await store.handle(routes: DeepLinkParser.parse(url))
+                    }
                 }
         }
     }

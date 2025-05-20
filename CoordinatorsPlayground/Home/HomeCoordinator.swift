@@ -46,6 +46,15 @@ struct HomeCoordinator: View {
         .task {
             await store.bindObservers()
         }
+        .sheet(
+            item: .init(get: { store.destination }, set: { store.handleDestinationChanged($0) }),
+            content: { destination in
+                switch destination {
+                case .screenB:
+                    makeView(for: destination, with: StoreB.self, content: ScreenB.init)
+                }
+            }
+        )
     }
 
     func toolbarButton() -> some ToolbarContent {
@@ -65,6 +74,19 @@ struct HomeCoordinator: View {
             case nil:
                 EmptyView()
             }
+        }
+    }
+    
+    @ViewBuilder
+    func makeView<Store, Content: View>(
+        for destination: HomeCoordinatorStore.Destination,
+        with storeType: Store.Type,
+        content: (Store) -> Content
+    ) -> some View {
+        if let store = store.store(for: destination, of: Store.self) {
+            content(store)
+        } else {
+            Text("Something went wrong")
         }
     }
     
@@ -90,9 +112,17 @@ class HomeCoordinatorStore: ObservableObject, Routable {
         case screenC
     }
     
+    enum Destination: Hashable, Identifiable {
+        case screenB(id: Int)
+        
+        var id: AnyHashable { self }
+    }
+    
+    @Published private(set) var destination: Destination?
     @Published private(set) var path: [Path] = []
     @Published private(set) var authState: AuthState?
-    private var stores: [Path: AnyObject] = [:]
+    private var destinationStore: AnyObject?
+    private var pathStores: [Path: AnyObject] = [:]
     let homeScreenStore: HomeScreenStore
     
     var onAccountButtonTapped: () -> Void = {}
@@ -116,14 +146,27 @@ class HomeCoordinatorStore: ObservableObject, Routable {
         print("Deinited: \(String(describing: self))")
     }
     
+    func store<T>(for destination: Destination, of type: T.Type) -> T? {
+        return destinationStore as? T
+    }
+    
     func store<T>(for path: Path, of type: T.Type) -> T? {
-        return stores[path] as? T
+        return pathStores[path] as? T
+    }
+    
+    func handleDestinationChanged(_ destination: Destination?) {
+        if let destination {
+            self.destination = destination
+        } else {
+            destinationStore = nil
+            self.destination = nil
+        }
     }
     
     func handlePathChanged(_ newPath: [Path]) {
         if newPath.count < path.count {
             let poppedPath = Array(path.suffix(from: newPath.count))
-            poppedPath.forEach { stores[$0] = nil }
+            poppedPath.forEach { pathStores[$0] = nil }
         }
         
         path = newPath
@@ -143,16 +186,8 @@ class HomeCoordinatorStore: ObservableObject, Routable {
         }
     }
     
-    private func makeStore(for path: Path) {
-        guard stores[path] == nil else { return }
-        
-        switch path {
-        case .screenA:
-            let store = StoreA()
-            store.onButtonTap = { [weak self] in
-                self?.push(path: .screenB(id: 1))
-            }
-            stores[path] = store
+    func makeStore(for destination: Destination) {
+        switch destination {
         case .screenB(let id):
             let store = StoreB(id: id)
             
@@ -164,7 +199,32 @@ class HomeCoordinatorStore: ObservableObject, Routable {
                 self?.push(path: .screenC)
             }
             
-            stores[path] = store
+            destinationStore = store
+        }
+    }
+    
+    private func makeStore(for path: Path) {
+        guard pathStores[path] == nil else { return }
+        
+        switch path {
+        case .screenA:
+            let store = StoreA()
+            store.onButtonTap = { [weak self] in
+                self?.push(path: .screenB(id: 1))
+            }
+            pathStores[path] = store
+        case .screenB(let id):
+            let store = StoreB(id: id)
+            
+            store.onPushClone = { [weak self] nextId in
+                self?.push(path: .screenB(id: nextId))
+            }
+            
+            store.onPushNext = { [weak self] in
+                self?.push(path: .screenC)
+            }
+            
+            pathStores[path] = store
         case .screenC:
             let store = StoreC()
             
@@ -172,7 +232,15 @@ class HomeCoordinatorStore: ObservableObject, Routable {
                 self?.pop()
             }
             
-            stores[path] = store
+            pathStores[path] = store
+        }
+    }
+    
+    private func present(destination: Destination) {
+        switch destination {
+        case .screenB:
+            makeStore(for: destination)
+            self.destination = destination
         }
     }
     
@@ -186,10 +254,10 @@ class HomeCoordinatorStore: ObservableObject, Routable {
         
         let lastPath = path.removeLast()
         
-        stores[lastPath] = nil
+        pathStores[lastPath] = nil
     }
     
-    func handle(routes: [Route]) {
+    func handle(routes: [Route]) async {
         guard let route = routes.first else { return }
         let routes = Array(routes.dropFirst())
         
@@ -197,21 +265,30 @@ class HomeCoordinatorStore: ObservableObject, Routable {
         switch route {
         case .screenA:
             push(path: .screenA)
-            handle(routes: routes)
-        case .screenB(id: let id):
-            push(path: .screenB(id: id))
-            handle(routes: routes)
+            await handle(routes: routes)
+        case let .screenB(id: id, presentationStyle: presentationStyle):
+            switch presentationStyle {
+            case .push:
+                push(path: .screenB(id: id))
+            case .present:
+                present(destination: .screenB(id: id))
+            }
+            
+            await handle(routes: routes)
         case .screenC:
             push(path: .screenC)
-            handle(routes: routes)
+            await handle(routes: routes)
         default:
             break
         }
         
-        stores
+        let routables = pathStores
             .values
             .compactMap { $0 as? Routable }
-            .forEach { $0.handle(routes: routes) }
+            
+        for routable in routables {
+            await routable.handle(routes: routes)
+        }
     }
 }
 

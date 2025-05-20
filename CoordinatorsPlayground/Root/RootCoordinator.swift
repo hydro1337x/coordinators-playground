@@ -12,12 +12,18 @@ struct RootCoordinator: View {
     
     var body: some View {
         TabsCoordinator(store: store.tabsCoordinatorStore)
-            .sheet(item: .init(get: { store.destination }, set: { store.handleDestinationChanged($0) })) { destination in
-                switch destination {
+            .sheet(item: .init(get: { store.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
+                switch sheet {
                 case .auth:
-                    makeView(for: destination, with: AuthCoordinatorStore.self, content: AuthCoordinator.init)
+                    makeView(for: .sheet(sheet), with: AuthCoordinatorStore.self, content: AuthCoordinator.init)
                 case .account:
-                    makeView(for: destination, with: AccountCoordinatorStore.self, content: AccountCoordinator.init)
+                    makeView(for: .sheet(sheet), with: AccountCoordinatorStore.self, content: AccountCoordinator.init)
+                }
+            }
+            .fullScreenCover(item: .init(get: { store.fullscreenCover }, set: { store.handleFullscreenCoverChanged($0) })) { destination in
+                switch destination {
+                case .onboarding:
+                    makeView(for: .fullscreenCover(.onboarding), with: OnboardingCoordinatorStore.self, content: OnboardingCoordinator.init)
                 }
             }
     }
@@ -38,14 +44,45 @@ struct RootCoordinator: View {
 
 @MainActor
 class RootCoordinatorStore: ObservableObject, Routable {
-    enum Destination: String, Identifiable {
-        case auth
-        case account
+    enum Destination: Identifiable, Hashable {
+        enum Sheet: Identifiable {
+            case auth
+            case account
+            
+            var id: AnyHashable { self }
+        }
         
-        var id: String { rawValue }
+        enum FullscreenCover: Identifiable {
+            case onboarding
+            
+            var id: AnyHashable { self }
+        }
+        case sheet(Sheet)
+        case fullscreenCover(FullscreenCover)
+        
+        var id: AnyHashable { self }
+        
+        var sheet: Sheet? {
+            guard case .sheet(let sheet) = self else { return nil }
+            return sheet
+        }
+        
+        var fullscreenCover: FullscreenCover? {
+            guard case .fullscreenCover(let fullscreenCover) = self else { return nil }
+            return fullscreenCover
+        }
     }
     
-    @Published private(set) var destination: Destination?
+    @Published private var destination: Destination?
+    
+    var sheet: Destination.Sheet? {
+        destination?.sheet
+    }
+    
+    var fullscreenCover: Destination.FullscreenCover? {
+        destination?.fullscreenCover
+    }
+    
     let tabsCoordinatorStore: TabsCoordinatorStore
     private var destinationStore: AnyObject?
     
@@ -53,15 +90,17 @@ class RootCoordinatorStore: ObservableObject, Routable {
     
     init(authStateStore: AuthStateStore) {
         self.authStateStore = authStateStore
+    
         tabsCoordinatorStore = TabsCoordinatorStore(selectedTab: .home, authStateStore: authStateStore)
-        
         tabsCoordinatorStore.onAccountButtonTapped = { [weak self] in
-            self?.present(destination: .account)
+            self?.present(destination: .sheet(.account))
+        }
+        tabsCoordinatorStore.onLoginButtonTapped = { [weak self] in
+            self?.present(destination: .sheet(.auth))
         }
         
-        tabsCoordinatorStore.onLoginButtonTapped = { [weak self] in
-            self?.present(destination: .auth)
-        }
+        makeStore(for: .fullscreenCover(.onboarding))
+        self.destination = .fullscreenCover(.onboarding)
     }
     
     deinit {
@@ -72,27 +111,50 @@ class RootCoordinatorStore: ObservableObject, Routable {
         destinationStore as? T
     }
     
-    func handleDestinationChanged(_ destination: Destination?) {
-        if destination == nil {
+    func handleSheetChanged(_ sheet: Destination.Sheet?) {
+        if let sheet {
+            destination = .sheet(sheet)
+        } else {
             destinationStore = nil
+            destination = nil
         }
-        self.destination = destination
+    }
+    
+    func handleFullscreenCoverChanged(_ fullscreenCover: Destination.FullscreenCover?) {
+        if let fullscreenCover {
+            destination = .fullscreenCover(fullscreenCover)
+        } else {
+            destinationStore = nil
+            destination = nil
+        }
     }
     
     private func makeStore(for destination: Destination) {
         switch destination {
-        case .auth:
-            let store = AuthCoordinatorStore(authStateStore: authStateStore)
-            store.onFinished = { [weak self] in
-                self?.present(destination: .account)
+        case .sheet(let sheet):
+            switch sheet {
+            case .auth:
+                let store = AuthCoordinatorStore(authStateStore: authStateStore)
+                store.onFinished = { [weak self] in
+                    self?.present(destination: .sheet(.account))
+                }
+                destinationStore = store
+            case .account:
+                let store = AccountCoordinatorStore(authStateStore: authStateStore)
+                store.onFinished = { [weak self] in
+                    self?.dismiss()
+                }
+                destinationStore = store
             }
-            destinationStore = store
-        case .account:
-            let store = AccountCoordinatorStore(authStateStore: authStateStore)
-            store.onFinished = { [weak self] in
-                self?.dismiss()
+        case .fullscreenCover(let fullscreenCover):
+            switch fullscreenCover {
+            case .onboarding:
+                let store = OnboardingCoordinatorStore()
+                store.onFinished = { [weak self] in
+                    self?.dismiss()
+                }
+                destinationStore = store
             }
-            destinationStore = store
         }
     }
     
@@ -107,39 +169,51 @@ class RootCoordinatorStore: ObservableObject, Routable {
         self.destination = nil
     }
     
-    private func handleAccountRoute() {
-        Task {
-            let authState = await authStateStore.currentValue
-            switch authState {
-            case .loggedIn:
-                present(destination: .account)
-            case .loginInProgress:
-                break
-            case .loggedOut:
-                present(destination: .auth)
+    private func login() async {
+        await authStateStore.setState(.loginInProgress)
+        try? await Task.sleep(for: .seconds(2))
+        await authStateStore.setState(.loggedIn)
+    }
+    
+    func handleAccountRoute(with authToken: String?) async {
+        let authState = await authStateStore.currentValue
+        switch authState {
+        case .loggedIn:
+            present(destination: .sheet(.account))
+        case .loginInProgress:
+            break
+        case .loggedOut:
+            if authToken != nil {
+                await login()
+                present(destination: .sheet(.account))
+            } else {
+                present(destination: .sheet(.auth))
             }
         }
     }
     
-    func handle(routes: [Route]) {
+    func handle(routes: [Route]) async {
         guard let route = routes.first else { return }
-        
+        let routes = Array(routes.dropFirst())
         switch route {
-        case .account:
-            handleAccountRoute()
+        case .account(let authToken):
+            await handleAccountRoute(with: authToken)
         default:
             break
         }
         
-        [tabsCoordinatorStore, destinationStore]
+        let routables = [tabsCoordinatorStore, destinationStore]
             .compactMap { $0 as? Routable }
-            .forEach { $0.handle(routes: routes) }
+        
+        for routable in routables {
+            await routable.handle(routes: routes)
+        }
     }
 }
 
 @MainActor
 protocol Routable {
-    func handle(routes: [Route])
+    func handle(routes: [Route]) async
 }
 
 enum AuthState {
@@ -147,8 +221,6 @@ enum AuthState {
     case loginInProgress
     case loggedOut
 }
-
-import Combine
 
 actor AuthStateStore {
     private struct Subscriber {
