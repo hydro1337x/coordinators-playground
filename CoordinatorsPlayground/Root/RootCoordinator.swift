@@ -43,7 +43,7 @@ struct RootCoordinator: View {
 }
 
 @MainActor
-class RootCoordinatorStore: ObservableObject, Routable {
+class RootCoordinatorStore: ObservableObject {
     enum Destination: Identifiable, Hashable {
         enum Sheet: Identifiable {
             case auth
@@ -83,6 +83,8 @@ class RootCoordinatorStore: ObservableObject, Routable {
         destination?.fullscreenCover
     }
     
+    var onUnhandeledRoute: ((Route) async -> Void)?
+    
     let tabsCoordinatorStore: TabsCoordinatorStore
     private var destinationStore: AnyObject?
     
@@ -91,7 +93,7 @@ class RootCoordinatorStore: ObservableObject, Routable {
     init(authStateStore: AuthStateStore) {
         self.authStateStore = authStateStore
     
-        tabsCoordinatorStore = TabsCoordinatorStore(selectedTab: .home, authStateStore: authStateStore)
+        tabsCoordinatorStore = TabsCoordinatorStore(selectedTab: .second, authStateStore: authStateStore)
         tabsCoordinatorStore.onAccountButtonTapped = { [weak self] in
             self?.present(destination: .sheet(.account))
         }
@@ -99,8 +101,8 @@ class RootCoordinatorStore: ObservableObject, Routable {
             self?.present(destination: .sheet(.auth))
         }
         
-        makeStore(for: .fullscreenCover(.onboarding))
-        self.destination = .fullscreenCover(.onboarding)
+//        makeStore(for: .fullscreenCover(.onboarding))
+//        self.destination = .fullscreenCover(.onboarding)
     }
     
     deinit {
@@ -175,7 +177,7 @@ class RootCoordinatorStore: ObservableObject, Routable {
         await authStateStore.setState(.loggedIn)
     }
     
-    func handleAccountRoute(with authToken: String?) async {
+    private func handleAccountRoute(with authToken: String?) async {
         let authState = await authStateStore.currentValue
         switch authState {
         case .loggedIn:
@@ -191,29 +193,66 @@ class RootCoordinatorStore: ObservableObject, Routable {
             }
         }
     }
-    
-    func handle(routes: [Route]) async {
-        guard let route = routes.first else { return }
-        let routes = Array(routes.dropFirst())
-        switch route {
-        case .account(let authToken):
-            await handleAccountRoute(with: authToken)
-        default:
-            break
+}
+
+extension RootCoordinatorStore: Router {
+    func handle(route: Route) async -> Bool {
+        let didHandleStep = await handle(step: route.step)
+        
+        guard didHandleStep else { return false }
+        
+        
+        let routers = [tabsCoordinatorStore, destinationStore]
+            .compactMap { $0 as? Router }
+        
+        for route in route.children {
+            var didHandleStep = false
+            
+            for router in routers {
+                if await router.handle(route: route) {
+                    didHandleStep = true
+                    break
+                }
+            }
+            
+            // If none of the child routers handled this child route
+            if !didHandleStep {
+                print("⚠️ Unhandled route step: \(route.step)")
+                return false
+            }
         }
         
-        let routables = [tabsCoordinatorStore, destinationStore]
-            .compactMap { $0 as? Routable }
-        
-        for routable in routables {
-            await routable.handle(routes: routes)
+        return true
+    }
+    
+    private func handle(step: Route.Step) async -> Bool {
+        switch step {
+        case .present(let destination):
+            switch destination {
+            case .login:
+                present(destination: .sheet(.auth))
+                return true
+            case .account(let authToken):
+                await handleAccountRoute(with: authToken)
+                return true
+            default:
+                return false
+            }
+        case .flow:
+            // If tabs should get deinited for some other flow
+            // For example if Auth Screen was not a global modal, but a separate flow from Tabs it would be handeled here
+            // Just propagate for now to fulfill the whole app flow without skips
+            return true
+        case .tab, .push:
+            return false
         }
     }
 }
 
 @MainActor
-protocol Routable {
-    func handle(routes: [Route]) async
+protocol Router {
+    var onUnhandeledRoute: ((Route) async -> Void)? { get }
+    func handle(route: Route) async -> Bool
 }
 
 enum AuthState {

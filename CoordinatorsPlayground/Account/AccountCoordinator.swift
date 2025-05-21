@@ -47,7 +47,7 @@ struct AccountCoordinator: View {
 }
 
 @MainActor
-class AccountCoordinatorStore: ObservableObject, Routable {
+class AccountCoordinatorStore: ObservableObject {
     enum Path {
         case details
     }
@@ -56,6 +56,7 @@ class AccountCoordinatorStore: ObservableObject, Routable {
     private var pathStores: [Path: AnyObject] = [:]
     
     var onFinished: () -> Void = {}
+    var onUnhandeledRoute: ((Route) async -> Void)?
     
     private let authStateStore: AuthStateStore
     
@@ -100,26 +101,25 @@ class AccountCoordinatorStore: ObservableObject, Routable {
         makeStore(for: path)
         self.path.append(path)
     }
+}
+
+extension AccountCoordinatorStore: Router {
+    func handle(route: Route) async -> Bool {
+        await handle(step: route.step)
+    }
     
-    func handle(routes: [Route]) async {
-        guard let route = routes.first else { return }
-        let routes = Array(routes.dropFirst())
-        
-        // Recursively execute route(deepLinks:) to check if there are remaining screens for stack pushing
-        switch route {
-        case .accountDetails:
-            push(path: .details)
-            await handle(routes: routes)
-        default:
-            break
-        }
-        
-        let routables = pathStores
-            .values
-            .compactMap { $0 as? Routable }
-            
-        for routable in routables {
-            await routable.handle(routes: routes)
+    private func handle(step: Route.Step) async -> Bool {
+        switch step {
+        case .push(let path):
+            switch path {
+            case .accountDetails:
+                push(path: .details)
+                return true
+            default:
+                return false
+            }
+        case .flow, .tab, .present:
+            return false
         }
     }
 }

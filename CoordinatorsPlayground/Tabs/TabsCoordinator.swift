@@ -30,7 +30,7 @@ struct TabsCoordinator: View {
 }
 
 @MainActor
-class TabsCoordinatorStore: ObservableObject, Routable {
+class TabsCoordinatorStore: ObservableObject {
     enum Tab: CaseIterable {
         case home
         case second
@@ -41,6 +41,7 @@ class TabsCoordinatorStore: ObservableObject, Routable {
     
     var onAccountButtonTapped: () -> Void = {}
     var onLoginButtonTapped: () -> Void = {}
+    var onUnhandeledRoute: ((Route) async -> Void)?
     
     private let authStateStore: AuthStateStore
     
@@ -82,24 +83,49 @@ class TabsCoordinatorStore: ObservableObject, Routable {
     private func show(tab: Tab) {
         self.tab = tab
     }
-    
-    func handle(routes: [Route]) async {
-        guard let route = routes.first else { return }
-        let routes = Array(routes.dropFirst())
+}
+
+extension TabsCoordinatorStore: Router {
+    func handle(route: Route) async -> Bool {
+        let didHandleStep = await handle(step: route.step)
         
-        switch route {
-        case .home:
-            show(tab: .home)
-        default:
-            break
+        guard didHandleStep else { return false }
+        
+        let routers = stores.values.compactMap { $0 as? Router }
+        
+        for route in route.children {
+            var didHandleStep = false
+            
+            for router in routers {
+                if await router.handle(route: route) {
+                    didHandleStep = true
+                    break
+                }
+            }
+            
+            // If none of the child routers handled this child route
+            if !didHandleStep {
+                print("⚠️ Unhandled route step: \(route.step)")
+                return false
+            }
         }
         
-        let routables = stores
-            .values
-            .compactMap { $0 as? Routable }
-            
-        for routable in routables {
-            await routable.handle(routes: routes)
+        return true
+    }
+    
+    private func handle(step: Route.Step) async -> Bool {
+        switch step {
+        case .tab(let tab):
+            switch tab {
+            case .home:
+                show(tab: .home)
+                return true
+            case .profile:
+                show(tab: .second)
+                return true
+            }
+        case .flow, .present, .push:
+            return false
         }
     }
 }

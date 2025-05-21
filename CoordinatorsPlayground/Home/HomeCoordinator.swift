@@ -105,7 +105,7 @@ struct HomeCoordinator: View {
 }
 
 @MainActor
-class HomeCoordinatorStore: ObservableObject, Routable {
+class HomeCoordinatorStore: ObservableObject {
     enum Path: Hashable {
         case screenA
         case screenB(id: Int)
@@ -127,6 +127,7 @@ class HomeCoordinatorStore: ObservableObject, Routable {
     
     var onAccountButtonTapped: () -> Void = {}
     var onLoginButtonTapped: () -> Void = {}
+    var onUnhandeledRoute: ((Route) async -> Void)?
     
     private let authStateStore: AuthStateStore
     
@@ -256,40 +257,69 @@ class HomeCoordinatorStore: ObservableObject, Routable {
         
         pathStores[lastPath] = nil
     }
-    
-    func handle(routes: [Route]) async {
-        guard let route = routes.first else { return }
-        let routes = Array(routes.dropFirst())
+}
+
+extension HomeCoordinatorStore: Router {
+    func handle(route: Route) async -> Bool {
+        let didHandleStep = await handle(step: route.step)
         
-        // Recursively execute route(deepLinks:) to check if there are remaining screens for stack pushing
-        switch route {
-        case .screenA:
-            push(path: .screenA)
-            await handle(routes: routes)
-        case let .screenB(id: id, presentationStyle: presentationStyle):
-            switch presentationStyle {
-            case .push:
-                push(path: .screenB(id: id))
-            case .present:
-                present(destination: .screenB(id: id))
+        guard didHandleStep else { return false }
+        
+        let routers = [
+            [destinationStore as? Router],
+            pathStores.values.map { $0 as? Router }
+        ]
+        .flatMap { $0 }
+        .compactMap { $0 }
+        
+        
+        for route in route.children {
+            var didHandleStep = false
+            
+            for router in routers {
+                if await router.handle(route: route) {
+                    didHandleStep = true
+                    break
+                }
             }
             
-            await handle(routes: routes)
-        case .screenC:
-            push(path: .screenC)
-            await handle(routes: routes)
-        default:
-            break
+            // If none of the child routers handled this child route
+            if !didHandleStep {
+                print("⚠️ Unhandled route step: \(route.step)")
+                return false
+            }
         }
         
-        let routables = pathStores
-            .values
-            .compactMap { $0 as? Routable }
-            
-        for routable in routables {
-            await routable.handle(routes: routes)
+        return true
+    }
+    
+    private func handle(step: Route.Step) async -> Bool {
+        switch step {
+        case .present(let destination):
+            switch destination {
+            case .screenB(id: let id):
+                present(destination: .screenB(id: id))
+                return true
+            default:
+                return false
+            }
+        case .push(let path):
+            switch path {
+            case .screenA:
+                push(path: .screenA)
+                return true
+            case .screenB(let id):
+                push(path: .screenB(id: id))
+                return true
+            case .screenC:
+                push(path: .screenC)
+                return true
+            default:
+                return false
+            }
+        case .flow, .tab:
+            return false
         }
     }
 }
-
 

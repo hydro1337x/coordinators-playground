@@ -22,7 +22,7 @@ struct CoordinatorsPlaygroundApp: App {
                 .onOpenURL { url in
                     /**
                      Test via command:
-                     xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=base64encodedData"
+                     xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=ewogICJzdGVwIjogewogICAgInR5cGUiOiAiZmxvdyIsCiAgICAidmFsdWUiOiAidGFicyIKICB9LAogICJjaGlsZHJlbiI6IFsKICAgIHsKICAgICAgInN0ZXAiOiB7CiAgICAgICAgInR5cGUiOiAidGFiIiwKICAgICAgICAidmFsdWUiOiAiaG9tZSIKICAgICAgfSwKICAgICAgImNoaWxkcmVuIjogWwogICAgICAgIHsKICAgICAgICAgICJzdGVwIjogewogICAgICAgICAgICAidHlwZSI6ICJwcmVzZW50IiwKICAgICAgICAgICAgInZhbHVlIjogewogICAgICAgICAgICAgICJ2YWx1ZSI6ICJhY2NvdW50IiwKICAgICAgICAgICAgICAiYXV0aFRva2VuIjogInNlY3JldFRva2VuIgogICAgICAgICAgICB9CiAgICAgICAgICB9LAogICAgICAgICAgImNoaWxkcmVuIjogW10KICAgICAgICB9CiAgICAgIF0KICAgIH0KICBdCn0="
                      Example (encode to base64)
                      [
                        { "value": "home" },
@@ -32,7 +32,16 @@ struct CoordinatorsPlaygroundApp: App {
                      ]
                      */
                     Task {
-                        await store.handle(routes: DeepLinkParser.parse(url))
+                        guard let route = DeepLinkParser.parse(url) else {
+                            print("Parsing failed")
+                            return
+                        }
+                        
+                        let didHandleRoute = await store.handle(route: route)
+                        
+                        if !didHandleRoute {
+                            print("⚠️ Unhandled route step: \(route.step)")
+                        }
                     }
                 }
         }
