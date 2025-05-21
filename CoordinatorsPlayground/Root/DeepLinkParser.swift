@@ -122,19 +122,19 @@ enum DeepLinkParser {
             return stringValue
             
         case is Int.Type:
-            if let v: Int = tryCast(value, as: Int.self), let value = v as? T {
+            if let v: Int = tryCast(value as Any, as: Int.self), let value = v as? T {
                 return value
             } else {
                 throw Error.typeCastingFailed(parameter: parameter.rawValue, type: String(describing: T.self))
             }
         case is Double.Type:
-            if let value = tryCast(value, as: Double.self) as? T {
+            if let v: Double = tryCast(value as Any, as: Double.self), let value = v as? T {
                 return value
             } else {
                 throw Error.typeCastingFailed(parameter: parameter.rawValue, type: String(describing: T.self))
             }
         case is Bool.Type:
-            if let value = tryCast(value, as: Bool.self) as? T {
+            if let v: Bool = tryCast(value as Any, as: Bool.self), let value = v as? T {
                 return value
             } else {
                 throw Error.typeCastingFailed(parameter: parameter.rawValue, type: String(describing: T.self))
