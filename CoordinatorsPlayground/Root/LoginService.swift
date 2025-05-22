@@ -12,13 +12,13 @@ protocol AuthTokenLoginService: Sendable {
 }
 
 struct LoginService: AuthTokenLoginService {
-    let authStateProvider: AuthStateProvider
+    let service: SetAuthStateService
     
     func login(authToken: String?) async throws {
-        guard let authToken else { throw URLError(.badServerResponse) }
+        guard authToken != nil else { throw URLError(.badServerResponse) }
         
-        await authStateProvider.setState(.loginInProgress)
+        await service.setState(.loginInProgress)
         try await Task.sleep(for: .seconds(2))
-        await authStateProvider.setState(.loggedIn)
+        await service.setState(.loggedIn)
     }
 }

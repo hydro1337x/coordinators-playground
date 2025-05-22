@@ -12,9 +12,9 @@ struct CoordinatorsPlaygroundApp: App {
     let store: RootCoordinatorStore
     
     init() {
-        let authStateProvider = AuthStateProvider()
-        let loginService = LoginService(authStateProvider: authStateProvider)
-        store = RootCoordinatorStore(authStateProvider: authStateProvider, loginService: loginService)
+        let authStateService = AuthStateProvider()
+        let loginService = LoginService(service: authStateService)
+        store = RootCoordinatorStore(authStateService: authStateService, loginService: loginService)
     }
     
     var body: some Scene {

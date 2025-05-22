@@ -88,14 +88,14 @@ class RootCoordinatorStore: ObservableObject {
     let tabsCoordinatorStore: TabsCoordinatorStore
     private var destinationStore: AnyObject?
     
-    private let authStateProvider: AuthStateProvider
+    private let authStateService: AuthStateValueService & AuthStateStreamService
     private let loginService: AuthTokenLoginService
     
-    init(authStateProvider: AuthStateProvider, loginService: AuthTokenLoginService) {
-        self.authStateProvider = authStateProvider
+    init(authStateService: AuthStateProvider, loginService: AuthTokenLoginService) {
+        self.authStateService = authStateService
         self.loginService = loginService
     
-        tabsCoordinatorStore = TabsCoordinatorStore(selectedTab: .second, authStateProvider: authStateProvider)
+        tabsCoordinatorStore = TabsCoordinatorStore(selectedTab: .second, authStateService: authStateService)
         tabsCoordinatorStore.onAccountButtonTapped = { [weak self] in
             self?.present(destination: .sheet(.account))
         }
@@ -148,13 +148,13 @@ class RootCoordinatorStore: ObservableObject {
         case .sheet(let sheet):
             switch sheet {
             case .auth:
-                let store = AuthCoordinatorStore(authStateProvider: authStateProvider)
+                let store = AuthCoordinatorStore(authStateService: authStateService, loginService: loginService)
                 store.onFinished = { [weak self] in
                     self?.present(destination: .sheet(.account))
                 }
                 destinationStore = store
             case .account:
-                let store = AccountCoordinatorStore(authStateProvider: authStateProvider)
+                let store = AccountCoordinatorStore(loginService: loginService)
                 store.onFinished = { [weak self] in
                     self?.dismiss()
                 }
@@ -184,7 +184,7 @@ class RootCoordinatorStore: ObservableObject {
     }
     
     private func handleAccountRoute(with authToken: String?) async {
-        let authState = await authStateProvider.currentValue
+        let authState = await authStateService.currentValue
         switch authState {
         case .loggedIn:
             present(destination: .sheet(.account))

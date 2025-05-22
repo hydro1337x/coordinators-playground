@@ -35,10 +35,12 @@ class AuthCoordinatorStore: ObservableObject {
     @Published var isLoading = false
     
     var onFinished: () -> Void = unimplemented()
-    let authStateProvider: AuthStateProvider
+    let loginService: AuthTokenLoginService
+    let authStateService: AuthStateStreamService
     
-    init(authStateProvider: AuthStateProvider) {
-        self.authStateProvider = authStateProvider
+    init(authStateService: AuthStateStreamService, loginService: AuthTokenLoginService) {
+        self.authStateService = authStateService
+        self.loginService = loginService
     }
     
     deinit {
@@ -46,7 +48,7 @@ class AuthCoordinatorStore: ObservableObject {
     }
     
     func bindObservers() async {
-        for await state in await authStateProvider.values {
+        for await state in await authStateService.values {
             switch state {
             case .loginInProgress:
                 isLoading = true
@@ -57,11 +59,7 @@ class AuthCoordinatorStore: ObservableObject {
     }
     
     func handleLoginTapped() async {
-        await authStateProvider.setState(.loginInProgress)
-        
-        try? await Task.sleep(for: .seconds(2))
-        
-        await authStateProvider.setState(.loggedIn)
+        try? await loginService.login(authToken: "")
         
         onFinished()
     }
