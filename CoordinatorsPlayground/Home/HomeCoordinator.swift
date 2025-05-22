@@ -129,10 +129,10 @@ class HomeCoordinatorStore: ObservableObject {
     var onLoginButtonTapped: () -> Void = unimplemented()
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
-    private let authStateStore: AuthStateStore
+    private let authStateProvider: AuthStateProvider
     
-    init(path: [Path], authStateStore: AuthStateStore) {
-        self.authStateStore = authStateStore
+    init(path: [Path], authStateProvider: AuthStateProvider) {
+        self.authStateProvider = authStateProvider
         self.homeScreenStore = HomeScreenStore()
         path.forEach { makeStore(for:$0) }
         
@@ -182,7 +182,7 @@ class HomeCoordinatorStore: ObservableObject {
     }
     
     func bindObservers() async {
-        for await state in await authStateStore.values {
+        for await state in await authStateProvider.values {
             authState = state
         }
     }

@@ -9,11 +9,11 @@ import SwiftUI
 
 @main
 struct CoordinatorsPlaygroundApp: App {
-    let authStateStore = AuthStateStore()
+    let authStateProvider = AuthStateProvider()
     let store: RootCoordinatorStore
     
     init() {
-        store = RootCoordinatorStore(authStateStore: authStateStore)
+        store = RootCoordinatorStore(authStateProvider: authStateProvider)
     }
     
     var body: some Scene {
@@ -23,13 +23,6 @@ struct CoordinatorsPlaygroundApp: App {
                     /**
                      Test via command:
                      xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=base64EncodedString"
-                     Example (encode to base64)
-                     [
-                       { "value": "home" },
-                       { "value": "screenA" },
-                       { "value": "screenB", "parameters": { "id": "1" } },
-                       { "value": "screenC" }
-                     ]
                      */
                     Task {
                         guard let route = DeepLinkParser.parse(url) else {

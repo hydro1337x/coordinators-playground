@@ -58,10 +58,10 @@ class AccountCoordinatorStore: ObservableObject {
     var onFinished: () -> Void = unimplemented()
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
-    private let authStateStore: AuthStateStore
+    private let authStateProvider: AuthStateProvider
     
-    init(authStateStore: AuthStateStore) {
-        self.authStateStore = authStateStore
+    init(authStateProvider: AuthStateProvider) {
+        self.authStateProvider = authStateProvider
     }
     
     deinit {
@@ -92,7 +92,7 @@ class AccountCoordinatorStore: ObservableObject {
     }
     
     func handleLogoutButtonTapped() async {
-        await authStateStore.setState(.loggedOut)
+        await authStateProvider.setState(.loggedOut)
         
         onFinished()
     }

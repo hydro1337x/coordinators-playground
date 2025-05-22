@@ -43,10 +43,10 @@ class TabsCoordinatorStore: ObservableObject {
     var onLoginButtonTapped: () -> Void = unimplemented()
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
-    private let authStateStore: AuthStateStore
+    private let authStateProvider: AuthStateProvider
     
-    init(selectedTab: Tab, authStateStore: AuthStateStore) {
-        self.authStateStore = authStateStore
+    init(selectedTab: Tab, authStateProvider: AuthStateProvider) {
+        self.authStateProvider = authStateProvider
         self.tab = selectedTab
         
         Tab.allCases.forEach { makeStore(for: $0) }
@@ -63,7 +63,7 @@ class TabsCoordinatorStore: ObservableObject {
     private func makeStore(for tab: Tab) {
         switch tab {
         case .home:
-            let store = HomeCoordinatorStore(path: [], authStateStore: authStateStore)
+            let store = HomeCoordinatorStore(path: [], authStateProvider: authStateProvider)
             store.onAccountButtonTapped = { [weak self] in
                 self?.onAccountButtonTapped()
             }

@@ -88,12 +88,12 @@ class RootCoordinatorStore: ObservableObject {
     let tabsCoordinatorStore: TabsCoordinatorStore
     private var destinationStore: AnyObject?
     
-    private let authStateStore: AuthStateStore
+    private let authStateProvider: AuthStateProvider
     
-    init(authStateStore: AuthStateStore) {
-        self.authStateStore = authStateStore
+    init(authStateProvider: AuthStateProvider) {
+        self.authStateProvider = authStateProvider
     
-        tabsCoordinatorStore = TabsCoordinatorStore(selectedTab: .second, authStateStore: authStateStore)
+        tabsCoordinatorStore = TabsCoordinatorStore(selectedTab: .second, authStateProvider: authStateProvider)
         tabsCoordinatorStore.onAccountButtonTapped = { [weak self] in
             self?.present(destination: .sheet(.account))
         }
@@ -146,13 +146,13 @@ class RootCoordinatorStore: ObservableObject {
         case .sheet(let sheet):
             switch sheet {
             case .auth:
-                let store = AuthCoordinatorStore(authStateStore: authStateStore)
+                let store = AuthCoordinatorStore(authStateProvider: authStateProvider)
                 store.onFinished = { [weak self] in
                     self?.present(destination: .sheet(.account))
                 }
                 destinationStore = store
             case .account:
-                let store = AccountCoordinatorStore(authStateStore: authStateStore)
+                let store = AccountCoordinatorStore(authStateProvider: authStateProvider)
                 store.onFinished = { [weak self] in
                     self?.dismiss()
                 }
@@ -182,13 +182,13 @@ class RootCoordinatorStore: ObservableObject {
     }
     
     private func login() async {
-        await authStateStore.setState(.loginInProgress)
+        await authStateProvider.setState(.loginInProgress)
         try? await Task.sleep(for: .seconds(2))
-        await authStateStore.setState(.loggedIn)
+        await authStateProvider.setState(.loggedIn)
     }
     
     private func handleAccountRoute(with authToken: String?) async {
-        let authState = await authStateStore.currentValue
+        let authState = await authStateProvider.currentValue
         switch authState {
         case .loggedIn:
             present(destination: .sheet(.account))
@@ -247,85 +247,6 @@ extension RootCoordinatorStore: Router {
             return true
         case .tab, .push:
             return false
-        }
-    }
-}
-
-@MainActor
-protocol Router {
-    var onUnhandledRoute: (Route) async -> Bool { get }
-    func handle(route: Route) async -> Bool
-}
-
-extension Router {
-    func handle(childRoutes: [Route], using childRouters: [Router]) async -> Bool {
-        for route in childRoutes {
-            var didHandleStep = false
-            
-            for router in childRouters {
-                if await router.handle(route: route) {
-                    didHandleStep = true
-                    break
-                }
-            }
-            
-            // If none of the child routers handled this child route
-            if !didHandleStep {
-                return await onUnhandledRoute(route)
-            }
-        }
-        
-        return true
-    }
-}
-
-enum AuthState {
-    case loggedIn
-    case loginInProgress
-    case loggedOut
-}
-
-actor AuthStateStore {
-    private struct Subscriber {
-        let id: UUID
-        let continuation: AsyncStream<AuthState>.Continuation
-    }
-    
-    private var state: AuthState = .loggedOut
-    private var subscribers: [Subscriber] = []
-    
-    var currentValue: AuthState {
-        state
-    }
-    
-    var values: AsyncStream<AuthState> {
-        let id = UUID()
-        
-        return AsyncStream { continuation in
-            // Yield the current value immediately
-            continuation.yield(state)
-            
-            let subscriber = Subscriber(id: id, continuation: continuation)
-            subscribers.append(subscriber)
-            
-            continuation.onTermination = { [weak self] _ in
-                Task {
-                    await self?.removeSubscribers(where: id)
-                }
-            }
-        }
-    }
-    
-    func removeSubscribers(where id: UUID) {
-        print("Removing subscribers for \(id)")
-        subscribers.removeAll { $0.id == id }
-    }
-    
-    func setState(_ newState: AuthState) {
-        guard newState != state else { return }
-        state = newState
-        for subscriber in subscribers {
-            subscriber.continuation.yield(newState)
         }
     }
 }
