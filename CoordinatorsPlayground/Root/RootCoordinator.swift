@@ -89,9 +89,11 @@ class RootCoordinatorStore: ObservableObject {
     private var destinationStore: AnyObject?
     
     private let authStateProvider: AuthStateProvider
+    private let loginService: AuthTokenLoginService
     
-    init(authStateProvider: AuthStateProvider) {
+    init(authStateProvider: AuthStateProvider, loginService: AuthTokenLoginService) {
         self.authStateProvider = authStateProvider
+        self.loginService = loginService
     
         tabsCoordinatorStore = TabsCoordinatorStore(selectedTab: .second, authStateProvider: authStateProvider)
         tabsCoordinatorStore.onAccountButtonTapped = { [weak self] in
@@ -181,12 +183,6 @@ class RootCoordinatorStore: ObservableObject {
         self.destination = nil
     }
     
-    private func login() async {
-        await authStateProvider.setState(.loginInProgress)
-        try? await Task.sleep(for: .seconds(2))
-        await authStateProvider.setState(.loggedIn)
-    }
-    
     private func handleAccountRoute(with authToken: String?) async {
         let authState = await authStateProvider.currentValue
         switch authState {
@@ -195,10 +191,10 @@ class RootCoordinatorStore: ObservableObject {
         case .loginInProgress:
             break
         case .loggedOut:
-            if authToken != nil {
-                await login()
+            do {
+                try await loginService.login(authToken: authToken)
                 present(destination: .sheet(.account))
-            } else {
+            } catch {
                 present(destination: .sheet(.auth))
             }
         }

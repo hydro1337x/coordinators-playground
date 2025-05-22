@@ -9,11 +9,12 @@ import SwiftUI
 
 @main
 struct CoordinatorsPlaygroundApp: App {
-    let authStateProvider = AuthStateProvider()
     let store: RootCoordinatorStore
     
     init() {
-        store = RootCoordinatorStore(authStateProvider: authStateProvider)
+        let authStateProvider = AuthStateProvider()
+        let loginService = LoginService(authStateProvider: authStateProvider)
+        store = RootCoordinatorStore(authStateProvider: authStateProvider, loginService: loginService)
     }
     
     var body: some Scene {
