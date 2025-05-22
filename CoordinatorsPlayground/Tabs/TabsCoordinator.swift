@@ -39,9 +39,9 @@ class TabsCoordinatorStore: ObservableObject {
     @Published var tab: Tab
     private var stores: [Tab: AnyObject] = [:]
     
-    var onAccountButtonTapped: () -> Void = {}
-    var onLoginButtonTapped: () -> Void = {}
-    var onUnhandeledRoute: ((Route) async -> Void)?
+    var onAccountButtonTapped: () -> Void = unimplemented()
+    var onLoginButtonTapped: () -> Void = unimplemented()
+    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
     private let authStateStore: AuthStateStore
     
@@ -70,6 +70,10 @@ class TabsCoordinatorStore: ObservableObject {
             store.onLoginButtonTapped = { [weak self] in
                 self?.onLoginButtonTapped()
             }
+            store.onUnhandledRoute = { [weak self] route in
+                guard let self else { return false }
+                return await self.onUnhandledRoute(route)
+            }
             stores[tab] = store
         case .second:
             break
@@ -89,28 +93,13 @@ extension TabsCoordinatorStore: Router {
     func handle(route: Route) async -> Bool {
         let didHandleStep = await handle(step: route.step)
         
-        guard didHandleStep else { return false }
+        guard didHandleStep else {
+            return await onUnhandledRoute(route)
+        }
         
         let routers = stores.values.compactMap { $0 as? Router }
         
-        for route in route.children {
-            var didHandleStep = false
-            
-            for router in routers {
-                if await router.handle(route: route) {
-                    didHandleStep = true
-                    break
-                }
-            }
-            
-            // If none of the child routers handled this child route
-            if !didHandleStep {
-                print("⚠️ Unhandled route step: \(route.step)")
-                return false
-            }
-        }
-        
-        return true
+        return await handle(childRoutes: route.children, using: routers)
     }
     
     private func handle(step: Route.Step) async -> Bool {

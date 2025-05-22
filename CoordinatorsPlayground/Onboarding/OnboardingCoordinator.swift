@@ -33,7 +33,7 @@ struct OnboardingCoordinator: View {
 
 @MainActor
 class OnboardingCoordinatorStore: ObservableObject {
-    var onFinished: () -> Void = {}
+    var onFinished: () -> Void = unimplemented()
     
     func handleSkipButtonTapped() {
         onFinished()

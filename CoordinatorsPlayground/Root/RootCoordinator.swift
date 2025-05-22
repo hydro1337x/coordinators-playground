@@ -83,7 +83,7 @@ class RootCoordinatorStore: ObservableObject {
         destination?.fullscreenCover
     }
     
-    var onUnhandeledRoute: ((Route) async -> Void)?
+    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
     let tabsCoordinatorStore: TabsCoordinatorStore
     private var destinationStore: AnyObject?
@@ -99,6 +99,16 @@ class RootCoordinatorStore: ObservableObject {
         }
         tabsCoordinatorStore.onLoginButtonTapped = { [weak self] in
             self?.present(destination: .sheet(.auth))
+        }
+        tabsCoordinatorStore.onUnhandledRoute = { [weak self] route in
+            guard let self else { return false }
+            return await self.onUnhandledRoute(route)
+        }
+        
+        // Implements its own closure since this is the last stop for handling routes :)
+        onUnhandledRoute = { [weak self] route in
+            guard let self else { return false }
+            return await self.handle(route: route)
         }
         
 //        makeStore(for: .fullscreenCover(.onboarding))
@@ -199,26 +209,18 @@ extension RootCoordinatorStore: Router {
     func handle(route: Route) async -> Bool {
         let didHandleStep = await handle(step: route.step)
         
-        guard didHandleStep else { return false }
-        
+        guard didHandleStep else {
+            return false
+        }
         
         let routers = [tabsCoordinatorStore, destinationStore]
             .compactMap { $0 as? Router }
         
         for route in route.children {
-            var didHandleStep = false
-            
             for router in routers {
                 if await router.handle(route: route) {
-                    didHandleStep = true
                     break
                 }
-            }
-            
-            // If none of the child routers handled this child route
-            if !didHandleStep {
-                print("⚠️ Unhandled route step: \(route.step)")
-                return false
             }
         }
         
@@ -251,8 +253,30 @@ extension RootCoordinatorStore: Router {
 
 @MainActor
 protocol Router {
-    var onUnhandeledRoute: ((Route) async -> Void)? { get }
+    var onUnhandledRoute: (Route) async -> Bool { get }
     func handle(route: Route) async -> Bool
+}
+
+extension Router {
+    func handle(childRoutes: [Route], using childRouters: [Router]) async -> Bool {
+        for route in childRoutes {
+            var didHandleStep = false
+            
+            for router in childRouters {
+                if await router.handle(route: route) {
+                    didHandleStep = true
+                    break
+                }
+            }
+            
+            // If none of the child routers handled this child route
+            if !didHandleStep {
+                return await onUnhandledRoute(route)
+            }
+        }
+        
+        return true
+    }
 }
 
 enum AuthState {
@@ -303,5 +327,39 @@ actor AuthStateStore {
         for subscriber in subscribers {
             subscriber.continuation.yield(newState)
         }
+    }
+}
+
+func unimplemented<T, U>(
+  _ name: String = #function,
+  return defaultValue: U
+) -> (T) async -> U {
+    return { _ in
+        assertionFailure("⚠️ Unimplemented closure: \(name)")
+        return defaultValue
+    }
+}
+
+//func unimplemented<T>(
+//  _ name: String = #function
+//) -> (T) async -> Void {
+//    return { _ in
+//        assertionFailure("⚠️ Unimplemented closure: \(name)")
+//    }
+//}
+
+func unimplemented<T>(
+  _ name: String = #function
+) -> (T) -> Void {
+    return { _ in
+        assertionFailure("⚠️ Unimplemented closure: \(name)")
+    }
+}
+
+func unimplemented(
+  _ name: String = #function
+) -> () -> Void {
+    return {
+        assertionFailure("⚠️ Unimplemented closure: \(name)")
     }
 }

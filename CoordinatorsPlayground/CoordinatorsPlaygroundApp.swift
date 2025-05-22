@@ -22,7 +22,7 @@ struct CoordinatorsPlaygroundApp: App {
                 .onOpenURL { url in
                     /**
                      Test via command:
-                     xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=ewogICJzdGVwIjogewogICAgInR5cGUiOiAiZmxvdyIsCiAgICAidmFsdWUiOiAidGFicyIKICB9LAogICJjaGlsZHJlbiI6IFsKICAgIHsKICAgICAgInN0ZXAiOiB7CiAgICAgICAgInR5cGUiOiAidGFiIiwKICAgICAgICAidmFsdWUiOiAiaG9tZSIKICAgICAgfSwKICAgICAgImNoaWxkcmVuIjogWwogICAgICAgIHsKICAgICAgICAgICJzdGVwIjogewogICAgICAgICAgICAidHlwZSI6ICJwcmVzZW50IiwKICAgICAgICAgICAgInZhbHVlIjogewogICAgICAgICAgICAgICJ2YWx1ZSI6ICJhY2NvdW50IiwKICAgICAgICAgICAgICAiYXV0aFRva2VuIjogInNlY3JldFRva2VuIgogICAgICAgICAgICB9CiAgICAgICAgICB9LAogICAgICAgICAgImNoaWxkcmVuIjogW10KICAgICAgICB9CiAgICAgIF0KICAgIH0KICBdCn0="
+                     xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=base64EncodedString"
                      Example (encode to base64)
                      [
                        { "value": "home" },

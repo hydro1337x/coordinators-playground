@@ -55,8 +55,8 @@ class AccountCoordinatorStore: ObservableObject {
     @Published private(set) var path: [Path] = []
     private var pathStores: [Path: AnyObject] = [:]
     
-    var onFinished: () -> Void = {}
-    var onUnhandeledRoute: ((Route) async -> Void)?
+    var onFinished: () -> Void = unimplemented()
+    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
     private let authStateStore: AuthStateStore
     

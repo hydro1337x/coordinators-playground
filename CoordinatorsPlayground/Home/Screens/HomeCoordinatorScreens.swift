@@ -25,7 +25,7 @@ struct HomeScreen: View {
 @MainActor
 class HomeScreenStore: ObservableObject {
     let title: String = "Home"
-    var onButtonTap: () -> Void = {}
+    var onButtonTap: () -> Void = unimplemented()
 }
 
 // MARK: - ScreenA
@@ -45,7 +45,7 @@ struct ScreenA: View {
 @MainActor
 class StoreA: ObservableObject {
     let title: String = "ScreenA"
-    var onButtonTap: () -> Void = {}
+    var onButtonTap: () -> Void = unimplemented()
     
     deinit {
         print("Deinited: \(String(describing: self))")
@@ -77,7 +77,7 @@ class StoreB: ObservableObject {
     let title: String
     let id: Int
     var onPushClone: (Int) -> Void = { _ in }
-    var onPushNext: () -> Void = {}
+    var onPushNext: () -> Void = unimplemented()
     
     init(id: Int) {
         self.id = id
@@ -107,7 +107,7 @@ struct ScreenC: View {
 @MainActor
 class StoreC: ObservableObject {
     let title: String = "ScreenC"
-    var onBack: () -> Void = {}
+    var onBack: () -> Void = unimplemented()
     
     deinit {
         print("Deinited: \(String(describing: self))")

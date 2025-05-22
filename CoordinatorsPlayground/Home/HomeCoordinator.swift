@@ -125,9 +125,9 @@ class HomeCoordinatorStore: ObservableObject {
     private var pathStores: [Path: AnyObject] = [:]
     let homeScreenStore: HomeScreenStore
     
-    var onAccountButtonTapped: () -> Void = {}
-    var onLoginButtonTapped: () -> Void = {}
-    var onUnhandeledRoute: ((Route) async -> Void)?
+    var onAccountButtonTapped: () -> Void = unimplemented()
+    var onLoginButtonTapped: () -> Void = unimplemented()
+    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
     private let authStateStore: AuthStateStore
     
@@ -263,7 +263,9 @@ extension HomeCoordinatorStore: Router {
     func handle(route: Route) async -> Bool {
         let didHandleStep = await handle(step: route.step)
         
-        guard didHandleStep else { return false }
+        guard didHandleStep else {
+            return await onUnhandledRoute(route)
+        }
         
         let routers = [
             [destinationStore as? Router],
@@ -272,25 +274,7 @@ extension HomeCoordinatorStore: Router {
         .flatMap { $0 }
         .compactMap { $0 }
         
-        
-        for route in route.children {
-            var didHandleStep = false
-            
-            for router in routers {
-                if await router.handle(route: route) {
-                    didHandleStep = true
-                    break
-                }
-            }
-            
-            // If none of the child routers handled this child route
-            if !didHandleStep {
-                print("⚠️ Unhandled route step: \(route.step)")
-                return false
-            }
-        }
-        
-        return true
+        return await handle(childRoutes: route.children, using: routers)
     }
     
     private func handle(step: Route.Step) async -> Bool {

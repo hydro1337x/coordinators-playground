@@ -34,7 +34,7 @@ struct AuthCoordinator: View {
 class AuthCoordinatorStore: ObservableObject {
     @Published var isLoading = false
     
-    var onFinished: () -> Void = {}
+    var onFinished: () -> Void = unimplemented()
     let authStateStore: AuthStateStore
     
     init(authStateStore: AuthStateStore) {
