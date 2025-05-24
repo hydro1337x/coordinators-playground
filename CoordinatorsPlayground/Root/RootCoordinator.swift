@@ -11,31 +11,34 @@ struct RootCoordinator: View {
     @ObservedObject var store: RootCoordinatorStore
     
     var body: some View {
-        TabsCoordinator(store: store.tabsCoordinatorStore)
-            .sheet(item: .init(get: { store.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
-                switch sheet {
-                case .auth:
-                    makeView(for: .sheet(sheet), with: AuthCoordinatorStore.self, content: AuthCoordinator.init)
-                case .account:
-                    makeView(for: .sheet(sheet), with: AccountCoordinatorStore.self, content: AccountCoordinator.init)
+        
+        if let tabsCoordinator = store.tabsCoordinator {
+            tabsCoordinator
+                .sheet(item: .init(get: { store.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
+                    switch sheet {
+                    case .auth:
+                        makeView(for: .sheet(sheet))
+                    case .account:
+                        makeView(for: .sheet(sheet))
+                    }
                 }
-            }
-            .fullScreenCover(item: .init(get: { store.fullscreenCover }, set: { store.handleFullscreenCoverChanged($0) })) { destination in
-                switch destination {
-                case .onboarding:
-                    makeView(for: .fullscreenCover(.onboarding), with: OnboardingCoordinatorStore.self, content: OnboardingCoordinator.init)
+                .fullScreenCover(item: .init(get: { store.fullscreenCover }, set: { store.handleFullscreenCoverChanged($0) })) { destination in
+                    switch destination {
+                    case .onboarding:
+                        makeView(for: .fullscreenCover(.onboarding))
+                    }
                 }
-            }
+        } else {
+            Text("Something went wrong")
+        }
     }
     
     @ViewBuilder
-    func makeView<Store, Content: View>(
-        for destination: RootCoordinatorStore.Destination,
-        with storeType: Store.Type,
-        content: (Store) -> Content
+    func makeView(
+        for destination: RootCoordinatorStore.Destination
     ) -> some View {
-        if let store = store.store(for: destination, of: Store.self) {
-            content(store)
+        if let view = store.destinationView {
+            view
         } else {
             Text("Something went wrong")
         }
@@ -85,27 +88,30 @@ class RootCoordinatorStore: ObservableObject {
     
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
-    let tabsCoordinatorStore: TabsCoordinatorStore
-    private var destinationStore: AnyObject?
+    private(set) var tabsCoordinator: Feature?
+    private(set) var destinationView: Feature?
     
-    private let authStateService: AuthStateValueService & AuthStateStreamService
-    private let loginService: AuthTokenLoginService
+    private let authStateService: AuthStateValueService
+    private let authService: AuthTokenLoginService
+    private let factory: RootCoordinatorFactory
     
-    init(authStateService: AuthStateProvider, loginService: AuthTokenLoginService) {
+    init(authStateService: AuthStateProvider, authService: AuthTokenLoginService, factory: RootCoordinatorFactory) {
         self.authStateService = authStateService
-        self.loginService = loginService
-    
-        tabsCoordinatorStore = TabsCoordinatorStore(selectedTab: .second, authStateService: authStateService)
-        tabsCoordinatorStore.onAccountButtonTapped = { [weak self] in
-            self?.present(destination: .sheet(.account))
-        }
-        tabsCoordinatorStore.onLoginButtonTapped = { [weak self] in
-            self?.present(destination: .sheet(.auth))
-        }
-        tabsCoordinatorStore.onUnhandledRoute = { [weak self] route in
-            guard let self else { return false }
-            return await self.onUnhandledRoute(route)
-        }
+        self.authService = authService
+        self.factory = factory
+        let tabsCoordinator = factory.makeTabsCoordinator(
+            onAccountButtonTapped: { [weak self] in
+                self?.present(destination: .sheet(.account))
+            },
+            onLoginButtonTapped: { [weak self] in
+                self?.present(destination: .sheet(.auth))
+            },
+            onUnhandledRoute: { [weak self] route in
+                guard let self else { return false }
+                return await self.onUnhandledRoute(route)
+            }
+        )
+        self.tabsCoordinator = tabsCoordinator
         
         // Implements its own closure since this is the last stop for handling routes :)
         onUnhandledRoute = { [weak self] route in
@@ -121,15 +127,11 @@ class RootCoordinatorStore: ObservableObject {
         print("Deinited: \(String(describing: self))")
     }
     
-    func store<T>(for destination: Destination, of type: T.Type) -> T? {
-        destinationStore as? T
-    }
-    
     func handleSheetChanged(_ sheet: Destination.Sheet?) {
         if let sheet {
             destination = .sheet(sheet)
         } else {
-            destinationStore = nil
+            destinationView = nil
             destination = nil
         }
     }
@@ -138,7 +140,7 @@ class RootCoordinatorStore: ObservableObject {
         if let fullscreenCover {
             destination = .fullscreenCover(fullscreenCover)
         } else {
-            destinationStore = nil
+            destinationView = nil
             destination = nil
         }
     }
@@ -148,38 +150,35 @@ class RootCoordinatorStore: ObservableObject {
         case .sheet(let sheet):
             switch sheet {
             case .auth:
-                let store = AuthCoordinatorStore(authStateService: authStateService, loginService: loginService)
-                store.onFinished = { [weak self] in
+                let view = factory.makeAuthCoordinator(onFinished: { [weak self] in
                     self?.present(destination: .sheet(.account))
-                }
-                destinationStore = store
+                })
+                destinationView = view
             case .account:
-                let store = AccountCoordinatorStore(loginService: loginService)
-                store.onFinished = { [weak self] in
+                let view = factory.makeAccountCoordinator(onFinished: { [weak self] in
                     self?.dismiss()
-                }
-                destinationStore = store
+                })
+                destinationView = view
             }
         case .fullscreenCover(let fullscreenCover):
             switch fullscreenCover {
             case .onboarding:
-                let store = OnboardingCoordinatorStore()
-                store.onFinished = { [weak self] in
+                let view = factory.makeOnboardingCoordinator(onFinished: { [weak self] in
                     self?.dismiss()
-                }
-                destinationStore = store
+                })
+                destinationView = view
             }
         }
     }
     
     private func present(destination: Destination) {
-        destinationStore = nil
+        destinationView = nil
         makeStore(for: destination)
         self.destination = destination
     }
     
     private func dismiss() {
-        destinationStore = nil
+        destinationView = nil
         self.destination = nil
     }
     
@@ -192,7 +191,7 @@ class RootCoordinatorStore: ObservableObject {
             break
         case .loggedOut:
             do {
-                try await loginService.login(authToken: authToken)
+                try await authService.login(authToken: authToken)
                 present(destination: .sheet(.account))
             } catch {
                 present(destination: .sheet(.auth))
@@ -209,8 +208,8 @@ extension RootCoordinatorStore: Router {
             return false
         }
         
-        let routers = [tabsCoordinatorStore, destinationStore]
-            .compactMap { $0 as? Router }
+        let routers = [tabsCoordinator, destinationView]
+            .compactMap { $0?.asRouter() }
         
         for route in route.children {
             for router in routers {

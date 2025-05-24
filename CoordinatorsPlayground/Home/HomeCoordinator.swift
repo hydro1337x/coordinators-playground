@@ -17,44 +17,26 @@ struct HomeCoordinator: View {
                 set: { store.handlePathChanged($0) }
             )
         ) {
-            HomeScreen(store: store.homeScreenStore)
+            makeRootView()
                 .navigationDestination(for: HomeCoordinatorStore.Path.self) { path in
-                    switch path {
-                    case .screenA:
-                        makeView(for: path, with: StoreA.self) { store in
-                            ScreenA(store: store)
-                                .navigationTitle(store.title)
-                                .toolbar(content: toolbarButton)
-                        }
-                    case .screenB:
-                        makeView(for: path, with: StoreB.self) { store in
-                            ScreenB(store: store)
-                                .navigationTitle(store.title)
-                                .toolbar(content: toolbarButton)
-                        }
-                    case .screenC:
-                        makeView(for: path, with: StoreC.self) { store in
-                            ScreenC(store: store)
-                                .navigationTitle(store.title)
-                                .toolbar(content: toolbarButton)
-                        }
-                    }
+                    makeView(for: path)
+                        .toolbar(content: toolbarButton)
                 }
-                .navigationTitle(store.homeScreenStore.title)
+                .navigationTitle("Home Screen")
                 .toolbar(content: toolbarButton)
-        }
-        .task {
-            await store.bindObservers()
         }
         .sheet(
             item: .init(get: { store.destination }, set: { store.handleDestinationChanged($0) }),
             content: { destination in
                 switch destination {
                 case .screenB:
-                    makeView(for: destination, with: StoreB.self, content: ScreenB.init)
+                    makeDestinatonView()
                 }
             }
         )
+        .task {
+            await store.bindObservers()
+        }
     }
 
     func toolbarButton() -> some ToolbarContent {
@@ -78,26 +60,29 @@ struct HomeCoordinator: View {
     }
     
     @ViewBuilder
-    func makeView<Store, Content: View>(
-        for destination: HomeCoordinatorStore.Destination,
-        with storeType: Store.Type,
-        content: (Store) -> Content
-    ) -> some View {
-        if let store = store.store(for: destination, of: Store.self) {
-            content(store)
+    func makeRootView() -> some View {
+        if let view = store.rootScreen {
+            view
         } else {
             Text("Something went wrong")
         }
     }
     
     @ViewBuilder
-    func makeView<Store, Content: View>(
-        for path: HomeCoordinatorStore.Path,
-        with storeType: Store.Type,
-        content: (Store) -> Content
+    func makeDestinatonView() -> some View {
+        if let view = store.destinationView {
+            view
+        } else {
+            Text("Something went wrong")
+        }
+    }
+    
+    @ViewBuilder
+    func makeView(
+        for path: HomeCoordinatorStore.Path
     ) -> some View {
-        if let store = store.store(for: path, of: Store.self) {
-            content(store)
+        if let view = store.pathViews[path] {
+            view
         } else {
             Text("Something went wrong")
         }
@@ -121,45 +106,37 @@ class HomeCoordinatorStore: ObservableObject {
     @Published private(set) var destination: Destination?
     @Published private(set) var path: [Path] = []
     @Published private(set) var authState: AuthState?
-    private var destinationStore: AnyObject?
-    private var pathStores: [Path: AnyObject] = [:]
-    let homeScreenStore: HomeScreenStore
+    private(set) var destinationView: Feature?
+    private(set) var pathViews: [Path: Feature] = [:]
+    private(set) var rootScreen: Feature?
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
-    private let authStateService: AuthStateProvider
+    private let authStateService: AuthStateStreamService
+    private let factory: HomeCoordinatorFactory
     
-    init(path: [Path], authStateService: AuthStateProvider) {
+    init(path: [Path], authStateService: AuthStateStreamService, factory: HomeCoordinatorFactory) {
         self.authStateService = authStateService
-        self.homeScreenStore = HomeScreenStore()
+        self.factory = factory
+        self.rootScreen = factory.makeHomeScreen(onButtonTap: { [weak self] in
+            self?.push(path: .screenA)
+        })
         path.forEach { makeStore(for:$0) }
         
         self.path = path
-        
-        homeScreenStore.onButtonTap = { [weak self] in
-            self?.push(path: .screenA)
-        }
     }
     
     deinit {
         print("Deinited: \(String(describing: self))")
     }
     
-    func store<T>(for destination: Destination, of type: T.Type) -> T? {
-        return destinationStore as? T
-    }
-    
-    func store<T>(for path: Path, of type: T.Type) -> T? {
-        return pathStores[path] as? T
-    }
-    
     func handleDestinationChanged(_ destination: Destination?) {
         if let destination {
             self.destination = destination
         } else {
-            destinationStore = nil
+            destinationView = nil
             self.destination = nil
         }
     }
@@ -167,7 +144,7 @@ class HomeCoordinatorStore: ObservableObject {
     func handlePathChanged(_ newPath: [Path]) {
         if newPath.count < path.count {
             let poppedPath = Array(path.suffix(from: newPath.count))
-            poppedPath.forEach { pathStores[$0] = nil }
+            poppedPath.forEach { pathViews[$0] = nil }
         }
         
         path = newPath
@@ -187,60 +164,58 @@ class HomeCoordinatorStore: ObservableObject {
         }
     }
     
-    func makeStore(for destination: Destination) {
+    func makeView(for destination: Destination) {
         switch destination {
         case .screenB(let id):
-            let store = StoreB(id: id)
+            let view = factory.makeScreenB(
+                id: id,
+                onPushClone: { [weak self] nextId in
+                    self?.push(path: .screenB(id: nextId))
+                }, onPushNext: { [weak self] in
+                    self?.push(path: .screenC)
+                }
+            )
             
-            store.onPushClone = { [weak self] nextId in
-                self?.push(path: .screenB(id: nextId))
-            }
-            
-            store.onPushNext = { [weak self] in
-                self?.push(path: .screenC)
-            }
-            
-            destinationStore = store
+            destinationView = view
         }
     }
     
     private func makeStore(for path: Path) {
-        guard pathStores[path] == nil else { return }
+        guard pathViews[path] == nil else { return }
         
         switch path {
         case .screenA:
-            let store = StoreA()
-            store.onButtonTap = { [weak self] in
+            let view = factory.makeScreenA(onButtonTap: { [weak self] in
                 self?.push(path: .screenB(id: 1))
-            }
-            pathStores[path] = store
+            })
+            pathViews[path] = view
         case .screenB(let id):
-            let store = StoreB(id: id)
+            let view = factory.makeScreenB(
+                id: id,
+                onPushClone: { [weak self] nextId in
+                    self?.push(path: .screenB(id: nextId))
+                },
+                onPushNext: { [weak self] in
+                    self?.push(path: .screenC)
+                }
+            )
             
-            store.onPushClone = { [weak self] nextId in
-                self?.push(path: .screenB(id: nextId))
-            }
-            
-            store.onPushNext = { [weak self] in
-                self?.push(path: .screenC)
-            }
-            
-            pathStores[path] = store
+            pathViews[path] = view
         case .screenC:
-            let store = StoreC()
+            let view = factory.makeScreenC(
+                onBackButtonTapped: { [weak self] in
+                    self?.pop()
+                }
+            )
             
-            store.onBack = { [weak self] in
-                self?.pop()
-            }
-            
-            pathStores[path] = store
+            pathViews[path] = view
         }
     }
     
     private func present(destination: Destination) {
         switch destination {
         case .screenB:
-            makeStore(for: destination)
+            makeView(for: destination)
             self.destination = destination
         }
     }
@@ -255,7 +230,7 @@ class HomeCoordinatorStore: ObservableObject {
         
         let lastPath = path.removeLast()
         
-        pathStores[lastPath] = nil
+        pathViews[lastPath] = nil
     }
 }
 
@@ -268,8 +243,8 @@ extension HomeCoordinatorStore: Router {
         }
         
         let routers = [
-            [destinationStore as? Router],
-            pathStores.values.map { $0 as? Router }
+            [destinationView?.asRouter()],
+            pathViews.values.map { $0.asRouter() }
         ]
         .flatMap { $0 }
         .compactMap { $0 }

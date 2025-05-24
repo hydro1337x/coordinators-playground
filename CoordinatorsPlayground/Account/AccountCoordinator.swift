@@ -22,10 +22,7 @@ struct AccountCoordinator: View {
             .navigationDestination(for: AccountCoordinatorStore.Path.self) { path in
                 switch path {
                 case .details:
-                    makeView(for: path, with: AccountDetailsStore.self) { store in
-                        AccountDetailsScreen(store: store)
-                            .navigationTitle(store.title)
-                    }
+                    view(for: path)
                 }
             }
             .navigationTitle("Account")
@@ -33,13 +30,9 @@ struct AccountCoordinator: View {
     }
     
     @ViewBuilder
-    func makeView<Store, Content: View>(
-        for path: AccountCoordinatorStore.Path,
-        with storeType: Store.Type,
-        content: (Store) -> Content
-    ) -> some View {
-        if let store = store.store(for: path, of: Store.self) {
-            content(store)
+    func view(for path: AccountCoordinatorStore.Path) -> some View {
+        if let view = store.pathFeatures[path] {
+            view
         } else {
             Text("Something went wrong")
         }
@@ -53,52 +46,49 @@ class AccountCoordinatorStore: ObservableObject {
     }
     
     @Published private(set) var path: [Path] = []
-    private var pathStores: [Path: AnyObject] = [:]
+    private(set) var pathFeatures: [Path: Feature] = [:]
     
     var onFinished: () -> Void = unimplemented()
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
-    private let loginService: AuthTokenLoginService
+    private let logoutService: LogoutService
+    private let factory: AccountCoordinatorFactory
     
-    init(loginService: AuthTokenLoginService) {
-        self.loginService = loginService
+    init(logoutService: LogoutService, factory: AccountCoordinatorFactory) {
+        self.logoutService = logoutService
+        self.factory = factory
     }
     
     deinit {
         print("Deinited: \(String(describing: self))")
     }
     
-    func store<T>(for path: Path, of type: T.Type) -> T? {
-        return pathStores[path] as? T
-    }
-    
     func handlePathChanged(_ newPath: [Path]) {
         if newPath.count < path.count {
             let poppedPath = Array(path.suffix(from: newPath.count))
-            poppedPath.forEach { pathStores[$0] = nil }
+            poppedPath.forEach { pathFeatures[$0] = nil }
         }
         
         path = newPath
     }
-    
-    private func makeStore(for path: Path) {
-        guard pathStores[path] == nil else { return }
+    // Remove cache -> make StateObject and just return created AnyView when Coordinator destination requests it
+    private func makeView(for path: Path) {
+        guard pathFeatures[path] == nil else { return }
         
         switch path {
         case .details:
-            let store = AccountDetailsStore()
-            pathStores[path] = store
+            pathFeatures[path] = factory.makeAccountDetails()
         }
     }
     
     func handleLogoutButtonTapped() async {
-        try? await loginService.login(authToken: "")
+        await logoutService.logout()
         
         onFinished()
     }
     
     private func push(path: Path) {
-        makeStore(for: path)
+        makeView(for: path)
         self.path.append(path)
     }
 }

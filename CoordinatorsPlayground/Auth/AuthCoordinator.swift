@@ -35,12 +35,12 @@ class AuthCoordinatorStore: ObservableObject {
     @Published var isLoading = false
     
     var onFinished: () -> Void = unimplemented()
-    let loginService: AuthTokenLoginService
+    let authService: AuthTokenLoginService
     let authStateService: AuthStateStreamService
     
-    init(authStateService: AuthStateStreamService, loginService: AuthTokenLoginService) {
+    init(authStateService: AuthStateStreamService, authService: AuthTokenLoginService) {
         self.authStateService = authStateService
-        self.loginService = loginService
+        self.authService = authService
     }
     
     deinit {
@@ -59,7 +59,7 @@ class AuthCoordinatorStore: ObservableObject {
     }
     
     func handleLoginTapped() async {
-        try? await loginService.login(authToken: "")
+        try? await authService.login(authToken: "")
         
         onFinished()
     }

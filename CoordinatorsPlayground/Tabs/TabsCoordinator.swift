@@ -12,8 +12,8 @@ struct TabsCoordinator: View {
     
     var body: some View {
         TabView(selection: .init(get: { store.tab }, set: { store.handleTabChanged($0) })) {
-            if let store = store.store(for: .home, of: HomeCoordinatorStore.self) {
-                HomeCoordinator(store: store)
+            if let tabView = store.tabFeatures[.home] {
+                tabView
                     .tag(TabsCoordinatorStore.Tab.home)
                     .tabItem {
                         Image(systemName: "list.bullet")
@@ -30,6 +30,29 @@ struct TabsCoordinator: View {
 }
 
 @MainActor
+struct TabsCoordinatorFactory {
+    let authStateService: AuthStateStreamService
+    let homeCoordinatorFactory: HomeCoordinatorFactory
+    
+    func makeHomeCoordinator(
+        onAccountButtonTapped: @escaping () -> Void,
+        onLoginButtonTapped: @escaping () -> Void,
+        onUnhandledRoute: @escaping (Route) async -> Bool
+    ) -> Feature {
+        let store = HomeCoordinatorStore(
+            path: [],
+            authStateService: authStateService,
+            factory: homeCoordinatorFactory
+        )
+        store.onAccountButtonTapped = onAccountButtonTapped
+        store.onLoginButtonTapped = onLoginButtonTapped
+        store.onUnhandledRoute = onUnhandledRoute
+        let view = HomeCoordinator(store: store)
+        return Feature(view: view, store: store)
+    }
+}
+
+@MainActor
 class TabsCoordinatorStore: ObservableObject {
     enum Tab: CaseIterable {
         case home
@@ -37,44 +60,42 @@ class TabsCoordinatorStore: ObservableObject {
     }
     
     @Published var tab: Tab
-    private var stores: [Tab: AnyObject] = [:]
+    private(set) var tabFeatures: [Tab: Feature] = [:]
+    private var routingHandlers: [(Route) async -> Void] = []
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
-    private let authStateService: AuthStateProvider
+    private let factory: TabsCoordinatorFactory
     
-    init(selectedTab: Tab, authStateService: AuthStateProvider) {
-        self.authStateService = authStateService
+    init(selectedTab: Tab, factory: TabsCoordinatorFactory) {
+        self.factory = factory
         self.tab = selectedTab
         
-        Tab.allCases.forEach { makeStore(for: $0) }
+        Tab.allCases.forEach { makeFeature(for: $0) }
     }
     
     deinit {
         print("Deinited: \(String(describing: self))")
     }
     
-    func store<T>(for tab: Tab, of type: T.Type) -> T? {
-        stores[tab] as? T
-    }
-    
-    private func makeStore(for tab: Tab) {
+    private func makeFeature(for tab: Tab) {
         switch tab {
         case .home:
-            let store = HomeCoordinatorStore(path: [], authStateService: authStateService)
-            store.onAccountButtonTapped = { [weak self] in
-                self?.onAccountButtonTapped()
-            }
-            store.onLoginButtonTapped = { [weak self] in
-                self?.onLoginButtonTapped()
-            }
-            store.onUnhandledRoute = { [weak self] route in
-                guard let self else { return false }
-                return await self.onUnhandledRoute(route)
-            }
-            stores[tab] = store
+            let feature = factory.makeHomeCoordinator(
+                onAccountButtonTapped: { [weak self] in
+                    self?.onAccountButtonTapped()
+                },
+                onLoginButtonTapped: { [weak self] in
+                    self?.onLoginButtonTapped()
+                },
+                onUnhandledRoute: { [weak self] route in
+                    guard let self else { return false }
+                    return await self.onUnhandledRoute(route)
+                }
+            )
+            tabFeatures[tab] = feature
         case .second:
             break
         }
@@ -97,7 +118,7 @@ extension TabsCoordinatorStore: Router {
             return await onUnhandledRoute(route)
         }
         
-        let routers = stores.values.compactMap { $0 as? Router }
+        let routers = tabFeatures.values.compactMap { $0.asRouter() }
         
         return await handle(childRoutes: route.children, using: routers)
     }

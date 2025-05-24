@@ -1,5 +1,5 @@
 //
-//  LoginService.swift
+//  AuthService.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 22.05.2025..
@@ -11,7 +11,11 @@ protocol AuthTokenLoginService: Sendable {
     func login(authToken: String?) async throws
 }
 
-struct LoginService: AuthTokenLoginService {
+protocol LogoutService: Sendable {
+    func logout() async
+}
+
+struct AuthService: AuthTokenLoginService, LogoutService {
     let service: SetAuthStateService
     
     func login(authToken: String?) async throws {
@@ -20,5 +24,9 @@ struct LoginService: AuthTokenLoginService {
         await service.setState(.loginInProgress)
         try await Task.sleep(for: .seconds(2))
         await service.setState(.loggedIn)
+    }
+    
+    func logout() async {
+        await service.setState(.loggedOut)
     }
 }
