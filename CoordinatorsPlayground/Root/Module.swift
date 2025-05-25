@@ -8,20 +8,55 @@
 import Foundation
 import SwiftUI
 
-struct Feature: View {
-    private let _view: AnyView
-    private let _store: AnyObject
+struct _Feature<V: View, S: AnyObject>: View {
+    let _view: V
+    let _store: S
     
-    init<V: View>(view: V, store: AnyObject) {
-        self._view = AnyView(view)
+    private init(view: V, store: S) {
+        self._view = view
         self._store = store
     }
     
     var body: some View {
         _view
     }
+}
+
+extension _Feature: Router where S: Router {
+    var onUnhandledRoute: (Route) async -> Bool {
+        _store.onUnhandledRoute
+    }
     
-    func asRouter() -> Router? {
-        _store as? Router
+    func handle(route: Route) async -> Bool {
+        await _store.handle(route: route)
     }
 }
+
+fileprivate extension _Feature {
+    static func makeFeature(view: V, store: S) -> _Feature {
+        .init(view: view, store: store)
+    }
+}
+
+struct Feature: View {
+    private let _view: AnyView
+    private let _store: AnyObject
+    
+    let underlyingFeature: Any
+    
+    init<V: View, S: AnyObject>(view: V, store: S) {
+        self._view = AnyView(view)
+        self._store = store
+        let feature = _Feature.makeFeature(view: view, store: store)
+        self.underlyingFeature = feature
+    }
+    
+    var body: some View {
+        _view
+    }
+    
+    func `as`<T>(type: T.Type) -> T? {
+        _store as? T
+    }
+}
+

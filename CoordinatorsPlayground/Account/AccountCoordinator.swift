@@ -22,7 +22,7 @@ struct AccountCoordinator: View {
             .navigationDestination(for: AccountCoordinatorStore.Path.self) { path in
                 switch path {
                 case .details:
-                    view(for: path)
+                    makeFeature(for: path)
                 }
             }
             .navigationTitle("Account")
@@ -30,7 +30,7 @@ struct AccountCoordinator: View {
     }
     
     @ViewBuilder
-    func view(for path: AccountCoordinatorStore.Path) -> some View {
+    func makeFeature(for path: AccountCoordinatorStore.Path) -> some View {
         if let view = store.pathFeatures[path] {
             view
         } else {
@@ -71,8 +71,8 @@ class AccountCoordinatorStore: ObservableObject {
         
         path = newPath
     }
-    // Remove cache -> make StateObject and just return created AnyView when Coordinator destination requests it
-    private func makeView(for path: Path) {
+    
+    private func makeFeature(for path: Path) {
         guard pathFeatures[path] == nil else { return }
         
         switch path {
@@ -88,7 +88,7 @@ class AccountCoordinatorStore: ObservableObject {
     }
     
     private func push(path: Path) {
-        makeView(for: path)
+        makeFeature(for: path)
         self.path.append(path)
     }
 }

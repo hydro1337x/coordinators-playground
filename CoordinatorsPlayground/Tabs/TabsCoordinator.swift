@@ -12,8 +12,8 @@ struct TabsCoordinator: View {
     
     var body: some View {
         TabView(selection: .init(get: { store.tab }, set: { store.handleTabChanged($0) })) {
-            if let tabView = store.tabFeatures[.home] {
-                tabView
+            if let tabFeature = store.tabFeatures[.home] {
+                tabFeature
                     .tag(TabsCoordinatorStore.Tab.home)
                     .tabItem {
                         Image(systemName: "list.bullet")
@@ -95,7 +95,7 @@ extension TabsCoordinatorStore: Router {
             return await onUnhandledRoute(route)
         }
         
-        let routers = tabFeatures.values.compactMap { $0.asRouter() }
+        let routers = tabFeatures.values.compactMap { $0.as(type: Router.self) }
         
         return await handle(childRoutes: route.children, using: routers)
     }

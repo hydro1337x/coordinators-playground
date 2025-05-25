@@ -17,9 +17,9 @@ struct HomeCoordinator: View {
                 set: { store.handlePathChanged($0) }
             )
         ) {
-            makeRootView()
+            makeRootFeature()
                 .navigationDestination(for: HomeCoordinatorStore.Path.self) { path in
-                    makeView(for: path)
+                    makeFeature(for: path)
                         .toolbar(content: toolbarButton)
                 }
                 .navigationTitle("Home Screen")
@@ -30,7 +30,7 @@ struct HomeCoordinator: View {
             content: { destination in
                 switch destination {
                 case .screenB:
-                    makeDestinatonView()
+                    makeDestinatonFeature()
                 }
             }
         )
@@ -60,8 +60,8 @@ struct HomeCoordinator: View {
     }
     
     @ViewBuilder
-    func makeRootView() -> some View {
-        if let view = store.rootScreen {
+    func makeRootFeature() -> some View {
+        if let view = store.rootFeature {
             view
         } else {
             Text("Something went wrong")
@@ -69,8 +69,8 @@ struct HomeCoordinator: View {
     }
     
     @ViewBuilder
-    func makeDestinatonView() -> some View {
-        if let view = store.destinationView {
+    func makeDestinatonFeature() -> some View {
+        if let view = store.destinationFeature {
             view
         } else {
             Text("Something went wrong")
@@ -78,10 +78,10 @@ struct HomeCoordinator: View {
     }
     
     @ViewBuilder
-    func makeView(
+    func makeFeature(
         for path: HomeCoordinatorStore.Path
     ) -> some View {
-        if let view = store.pathViews[path] {
+        if let view = store.pathFeatures[path] {
             view
         } else {
             Text("Something went wrong")
@@ -106,9 +106,10 @@ class HomeCoordinatorStore: ObservableObject {
     @Published private(set) var destination: Destination?
     @Published private(set) var path: [Path] = []
     @Published private(set) var authState: AuthState?
-    private(set) var destinationView: Feature?
-    private(set) var pathViews: [Path: Feature] = [:]
-    private(set) var rootScreen: Feature?
+    
+    private(set) var destinationFeature: Feature?
+    private(set) var pathFeatures: [Path: Feature] = [:]
+    private(set) var rootFeature: Feature?
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
@@ -120,10 +121,10 @@ class HomeCoordinatorStore: ObservableObject {
     init(path: [Path], authStateService: AuthStateStreamService, factory: HomeCoordinatorFactory) {
         self.authStateService = authStateService
         self.factory = factory
-        self.rootScreen = factory.makeHomeScreen(onButtonTap: { [weak self] in
+        self.rootFeature = factory.makeHomeScreen(onButtonTap: { [weak self] in
             self?.push(path: .screenA)
         })
-        path.forEach { makeStore(for:$0) }
+        path.forEach { makeFeature(for:$0) }
         
         self.path = path
     }
@@ -136,7 +137,7 @@ class HomeCoordinatorStore: ObservableObject {
         if let destination {
             self.destination = destination
         } else {
-            destinationView = nil
+            destinationFeature = nil
             self.destination = nil
         }
     }
@@ -144,7 +145,7 @@ class HomeCoordinatorStore: ObservableObject {
     func handlePathChanged(_ newPath: [Path]) {
         if newPath.count < path.count {
             let poppedPath = Array(path.suffix(from: newPath.count))
-            poppedPath.forEach { pathViews[$0] = nil }
+            poppedPath.forEach { pathFeatures[$0] = nil }
         }
         
         path = newPath
@@ -164,7 +165,7 @@ class HomeCoordinatorStore: ObservableObject {
         }
     }
     
-    func makeView(for destination: Destination) {
+    func makeFeature(for destination: Destination) {
         switch destination {
         case .screenB(let id):
             let view = factory.makeScreenB(
@@ -176,19 +177,19 @@ class HomeCoordinatorStore: ObservableObject {
                 }
             )
             
-            destinationView = view
+            destinationFeature = view
         }
     }
     
-    private func makeStore(for path: Path) {
-        guard pathViews[path] == nil else { return }
+    private func makeFeature(for path: Path) {
+        guard pathFeatures[path] == nil else { return }
         
         switch path {
         case .screenA:
             let view = factory.makeScreenA(onButtonTap: { [weak self] in
                 self?.push(path: .screenB(id: 1))
             })
-            pathViews[path] = view
+            pathFeatures[path] = view
         case .screenB(let id):
             let view = factory.makeScreenB(
                 id: id,
@@ -200,7 +201,7 @@ class HomeCoordinatorStore: ObservableObject {
                 }
             )
             
-            pathViews[path] = view
+            pathFeatures[path] = view
         case .screenC:
             let view = factory.makeScreenC(
                 onBackButtonTapped: { [weak self] in
@@ -208,20 +209,20 @@ class HomeCoordinatorStore: ObservableObject {
                 }
             )
             
-            pathViews[path] = view
+            pathFeatures[path] = view
         }
     }
     
     private func present(destination: Destination) {
         switch destination {
         case .screenB:
-            makeView(for: destination)
+            makeFeature(for: destination)
             self.destination = destination
         }
     }
     
     private func push(path: Path) {
-        makeStore(for: path)
+        makeFeature(for: path)
         self.path.append(path)
     }
     
@@ -230,7 +231,7 @@ class HomeCoordinatorStore: ObservableObject {
         
         let lastPath = path.removeLast()
         
-        pathViews[lastPath] = nil
+        pathFeatures[lastPath] = nil
     }
 }
 
@@ -243,8 +244,8 @@ extension HomeCoordinatorStore: Router {
         }
         
         let routers = [
-            [destinationView?.asRouter()],
-            pathViews.values.map { $0.asRouter() }
+            [destinationFeature?.as(type: Router.self)],
+            pathFeatures.values.map { $0.as(type: Router.self) }
         ]
         .flatMap { $0 }
         .compactMap { $0 }

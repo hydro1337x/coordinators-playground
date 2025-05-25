@@ -17,15 +17,15 @@ struct RootCoordinator: View {
                 .sheet(item: .init(get: { store.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
                     switch sheet {
                     case .auth:
-                        makeView(for: .sheet(sheet))
+                        destinationFeature()
                     case .account:
-                        makeView(for: .sheet(sheet))
+                        destinationFeature()
                     }
                 }
                 .fullScreenCover(item: .init(get: { store.fullscreenCover }, set: { store.handleFullscreenCoverChanged($0) })) { destination in
                     switch destination {
                     case .onboarding:
-                        makeView(for: .fullscreenCover(.onboarding))
+                        destinationFeature()
                     }
                 }
         } else {
@@ -34,10 +34,8 @@ struct RootCoordinator: View {
     }
     
     @ViewBuilder
-    func makeView(
-        for destination: RootCoordinatorStore.Destination
-    ) -> some View {
-        if let view = store.destinationView {
+    func destinationFeature() -> some View {
+        if let view = store.destinationFeature {
             view
         } else {
             Text("Something went wrong")
@@ -78,18 +76,13 @@ class RootCoordinatorStore: ObservableObject {
     
     @Published private var destination: Destination?
     
-    var sheet: Destination.Sheet? {
-        destination?.sheet
-    }
-    
-    var fullscreenCover: Destination.FullscreenCover? {
-        destination?.fullscreenCover
-    }
+    var sheet: Destination.Sheet? { destination?.sheet }
+    var fullscreenCover: Destination.FullscreenCover? { destination?.fullscreenCover }
     
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
     private(set) var tabsCoordinator: Feature?
-    private(set) var destinationView: Feature?
+    private(set) var destinationFeature: Feature?
     
     private let authStateService: AuthStateValueService
     private let authService: AuthTokenLoginService
@@ -131,7 +124,7 @@ class RootCoordinatorStore: ObservableObject {
         if let sheet {
             destination = .sheet(sheet)
         } else {
-            destinationView = nil
+            destinationFeature = nil
             destination = nil
         }
     }
@@ -140,12 +133,12 @@ class RootCoordinatorStore: ObservableObject {
         if let fullscreenCover {
             destination = .fullscreenCover(fullscreenCover)
         } else {
-            destinationView = nil
+            destinationFeature = nil
             destination = nil
         }
     }
     
-    private func makeStore(for destination: Destination) {
+    private func makeFeature(for destination: Destination) {
         switch destination {
         case .sheet(let sheet):
             switch sheet {
@@ -153,12 +146,12 @@ class RootCoordinatorStore: ObservableObject {
                 let view = factory.makeAuthCoordinator(onFinished: { [weak self] in
                     self?.present(destination: .sheet(.account))
                 })
-                destinationView = view
+                destinationFeature = view
             case .account:
                 let view = factory.makeAccountCoordinator(onFinished: { [weak self] in
                     self?.dismiss()
                 })
-                destinationView = view
+                destinationFeature = view
             }
         case .fullscreenCover(let fullscreenCover):
             switch fullscreenCover {
@@ -166,19 +159,19 @@ class RootCoordinatorStore: ObservableObject {
                 let view = factory.makeOnboardingCoordinator(onFinished: { [weak self] in
                     self?.dismiss()
                 })
-                destinationView = view
+                destinationFeature = view
             }
         }
     }
     
     private func present(destination: Destination) {
-        destinationView = nil
-        makeStore(for: destination)
+        destinationFeature = nil
+        makeFeature(for: destination)
         self.destination = destination
     }
     
     private func dismiss() {
-        destinationView = nil
+        destinationFeature = nil
         self.destination = nil
     }
     
@@ -208,8 +201,8 @@ extension RootCoordinatorStore: Router {
             return false
         }
         
-        let routers = [tabsCoordinator, destinationView]
-            .compactMap { $0?.asRouter() }
+        let routers = [tabsCoordinator, destinationFeature]
+            .compactMap { $0?.as(type: Router.self) }
         
         for route in route.children {
             for router in routers {
