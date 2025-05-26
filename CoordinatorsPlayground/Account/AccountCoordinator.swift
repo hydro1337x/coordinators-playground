@@ -116,11 +116,9 @@ class AccountCoordinatorStore: ObservableObject {
 }
 
 extension AccountCoordinatorStore: Router {
-    func handle(route: Route) async -> Bool {
-        await handle(step: route.step)
-    }
+    var childRouters: [any Router] { [] }
     
-    private func handle(step: Route.Step) async -> Bool {
+    func handle(step: Route.Step) async -> Bool {
         switch step {
         case .push(let path):
             switch path {

@@ -88,19 +88,11 @@ class TabsCoordinatorStore: ObservableObject {
 }
 
 extension TabsCoordinatorStore: Router {
-    func handle(route: Route) async -> Bool {
-        let didHandleStep = await handle(step: route.step)
-        
-        guard didHandleStep else {
-            return await onUnhandledRoute(route)
-        }
-        
-        let routers = tabFeatures.values.compactMap { $0.as(type: Router.self) }
-        
-        return await handle(childRoutes: route.children, using: routers)
+    var childRouters: [Router] {
+        tabFeatures.values.compactMap { $0.as(type: Router.self) }
     }
     
-    private func handle(step: Route.Step) async -> Bool {
+    func handle(step: Route.Step) async -> Bool {
         switch step {
         case .tab(let tab):
             switch tab {

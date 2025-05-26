@@ -10,10 +10,22 @@ import Foundation
 @MainActor
 protocol Router {
     var onUnhandledRoute: (Route) async -> Bool { get }
+    var childRouters: [Router] { get }
     func handle(route: Route) async -> Bool
+    func handle(step: Route.Step) async -> Bool
 }
 
 extension Router {
+    func handle(route: Route) async -> Bool {
+        let didHandleStep = await handle(step: route.step)
+        
+        guard didHandleStep else {
+            return await onUnhandledRoute(route)
+        }
+        
+        return await handle(childRoutes: route.children, using: childRouters)
+    }
+    
     func handle(childRoutes: [Route], using childRouters: [Router]) async -> Bool {
         for route in childRoutes {
             var didHandleStep = false

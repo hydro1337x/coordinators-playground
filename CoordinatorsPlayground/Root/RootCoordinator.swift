@@ -11,7 +11,6 @@ struct RootCoordinator: View {
     @ObservedObject var store: RootCoordinatorStore
     
     var body: some View {
-        
         if let tabsCoordinator = store.tabsCoordinator {
             tabsCoordinator
                 .sheet(item: .init(get: { store.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
@@ -194,6 +193,12 @@ class RootCoordinatorStore: ObservableObject {
 }
 
 extension RootCoordinatorStore: Router {
+    var childRouters: [any Router] {
+        [tabsCoordinator, destinationFeature]
+            .compactMap { $0?.as(type: Router.self) }
+    }
+    
+    // Has custom handle(route:) since it must not call onUnhandledRoute since it's the root
     func handle(route: Route) async -> Bool {
         let didHandleStep = await handle(step: route.step)
         
@@ -201,11 +206,8 @@ extension RootCoordinatorStore: Router {
             return false
         }
         
-        let routers = [tabsCoordinator, destinationFeature]
-            .compactMap { $0?.as(type: Router.self) }
-        
         for route in route.children {
-            for router in routers {
+            for router in childRouters {
                 if await router.handle(route: route) {
                     break
                 }
@@ -215,7 +217,7 @@ extension RootCoordinatorStore: Router {
         return true
     }
     
-    private func handle(step: Route.Step) async -> Bool {
+    func handle(step: Route.Step) async -> Bool {
         switch step {
         case .present(let destination):
             switch destination {

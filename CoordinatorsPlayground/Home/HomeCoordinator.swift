@@ -236,24 +236,16 @@ class HomeCoordinatorStore: ObservableObject {
 }
 
 extension HomeCoordinatorStore: Router {
-    func handle(route: Route) async -> Bool {
-        let didHandleStep = await handle(step: route.step)
-        
-        guard didHandleStep else {
-            return await onUnhandledRoute(route)
-        }
-        
-        let routers = [
+    var childRouters: [any Router] {
+        [
             [destinationFeature?.as(type: Router.self)],
             pathFeatures.values.map { $0.as(type: Router.self) }
         ]
         .flatMap { $0 }
         .compactMap { $0 }
-        
-        return await handle(childRoutes: route.children, using: routers)
     }
     
-    private func handle(step: Route.Step) async -> Bool {
+    func handle(step: Route.Step) async -> Bool {
         switch step {
         case .present(let destination):
             switch destination {

@@ -1,5 +1,5 @@
 //
-//  Module.swift
+//  Feature.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 24.05.2025..
@@ -23,12 +23,16 @@ struct _Feature<V: View, S: AnyObject>: View {
 }
 
 extension _Feature: Router where S: Router {
+    var childRouters: [any Router] {
+        _store.childRouters
+    }
+    
     var onUnhandledRoute: (Route) async -> Bool {
         _store.onUnhandledRoute
     }
     
-    func handle(route: Route) async -> Bool {
-        await _store.handle(route: route)
+    func handle(step: Route.Step) async -> Bool {
+        await _store.handle(step: step)
     }
 }
 
