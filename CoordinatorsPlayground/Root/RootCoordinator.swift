@@ -195,7 +195,7 @@ class RootCoordinatorStore: ObservableObject {
 extension RootCoordinatorStore: Router {
     var childRouters: [any Router] {
         [tabsCoordinator, destinationFeature]
-            .compactMap { $0?.as(type: Router.self) }
+            .compactMap { $0?.as(type: (any Router).self) }
     }
     
     // Has custom handle(route:) since it must not call onUnhandledRoute since it's the root
@@ -217,16 +217,7 @@ extension RootCoordinatorStore: Router {
         return true
     }
     
-    func handle(step: Data) async -> Bool {
-        do {
-            let step = try JSONDecoder().decode(RootStep.self, from: step)
-            return await handle(step: step)
-        } catch {
-            return false
-        }
-    }
-    
-    private func handle(step: RootStep) async -> Bool {
+    func handle(step: RootStep) async -> Bool {
         switch step {
         case .present(let destination):
             switch destination {

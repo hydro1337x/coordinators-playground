@@ -238,23 +238,14 @@ class HomeCoordinatorStore: ObservableObject {
 extension HomeCoordinatorStore: Router {
     var childRouters: [any Router] {
         [
-            [destinationFeature?.as(type: Router.self)],
-            pathFeatures.values.map { $0.as(type: Router.self) }
+            [destinationFeature?.as(type: (any Router).self)],
+            pathFeatures.values.map { $0.as(type: (any Router).self) }
         ]
         .flatMap { $0 }
         .compactMap { $0 }
     }
     
-    func handle(step: Data) async -> Bool {
-        do {
-            let step = try JSONDecoder().decode(HomeStep.self, from: step)
-            return await handle(step: step)
-        } catch {
-            return false
-        }
-    }
-    
-    private func handle(step: HomeStep) async -> Bool {
+    func handle(step: HomeStep) async -> Bool {
         switch step {
         case .present(let destination):
             switch destination {

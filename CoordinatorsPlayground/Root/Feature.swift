@@ -23,6 +23,8 @@ struct _Feature<V: View, S: AnyObject>: View {
 }
 
 extension _Feature: Router where S: Router {
+    typealias Step = S.Step
+    
     var childRouters: [any Router] {
         _store.childRouters
     }
@@ -31,7 +33,7 @@ extension _Feature: Router where S: Router {
         _store.onUnhandledRoute
     }
     
-    func handle(step: Data) async -> Bool {
+    func handle(step: Step) async -> Bool {
         await _store.handle(step: step)
     }
 }

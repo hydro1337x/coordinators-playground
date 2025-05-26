@@ -88,20 +88,11 @@ class TabsCoordinatorStore: ObservableObject {
 }
 
 extension TabsCoordinatorStore: Router {
-    var childRouters: [Router] {
-        tabFeatures.values.compactMap { $0.as(type: Router.self) }
+    var childRouters: [any Router] {
+        tabFeatures.values.compactMap { $0.as(type: (any Router).self) }
     }
     
-    func handle(step: Data) async -> Bool {
-        do {
-            let step = try JSONDecoder().decode(TabsStep.self, from: step)
-            return await handle(step: step)
-        } catch {
-            return false
-        }
-    }
-    
-    private func handle(step: TabsStep) async -> Bool {
+    func handle(step: TabsStep) async -> Bool {
         switch step {
         case .tab(let tab):
             switch tab {

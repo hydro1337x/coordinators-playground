@@ -9,14 +9,25 @@ import Foundation
 
 @MainActor
 protocol Router {
+    associatedtype Step: Decodable
+    
     var onUnhandledRoute: (Route) async -> Bool { get }
-    var childRouters: [Router] { get }
+    var childRouters: [any Router] { get }
     
     func handle(route: Route) async -> Bool
-    func handle(step: Data) async -> Bool
+    func handle(step: Step) async -> Bool
 }
 
 extension Router {
+    func handle(step: Data) async -> Bool {
+        do {
+            let step = try JSONDecoder().decode(Step.self, from: step)
+            return await handle(step: step)
+        } catch {
+            return false
+        }
+    }
+    
     func handle(route: Route) async -> Bool {
         let didHandleStep = await handle(step: route.step)
         
@@ -27,7 +38,7 @@ extension Router {
         return await handle(childRoutes: route.children, using: childRouters)
     }
     
-    func handle(childRoutes: [Route], using childRouters: [Router]) async -> Bool {
+    func handle(childRoutes: [Route], using childRouters: [any Router]) async -> Bool {
         for route in childRoutes {
             var didHandleStep = false
             

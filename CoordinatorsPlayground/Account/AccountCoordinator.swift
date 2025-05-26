@@ -118,16 +118,7 @@ class AccountCoordinatorStore: ObservableObject {
 extension AccountCoordinatorStore: Router {
     var childRouters: [any Router] { [] }
     
-    func handle(step: Data) async -> Bool {
-        do {
-            let step = try JSONDecoder().decode(AccountStep.self, from: step)
-            return await handle(step: step)
-        } catch {
-            return false
-        }
-    }
-    
-    private func handle(step: AccountStep) async -> Bool {
+    func handle(step: AccountStep) async -> Bool {
         switch step {
         case .push(let path):
             switch path {
