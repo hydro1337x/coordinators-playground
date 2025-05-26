@@ -31,7 +31,7 @@ extension _Feature: Router where S: Router {
         _store.onUnhandledRoute
     }
     
-    func handle(step: Route.Step) async -> Bool {
+    func handle(step: Data) async -> Bool {
         await _store.handle(step: step)
     }
 }

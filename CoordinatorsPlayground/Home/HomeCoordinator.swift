@@ -245,15 +245,22 @@ extension HomeCoordinatorStore: Router {
         .compactMap { $0 }
     }
     
-    func handle(step: Route.Step) async -> Bool {
+    func handle(step: Data) async -> Bool {
+        do {
+            let step = try JSONDecoder().decode(HomeStep.self, from: step)
+            return await handle(step: step)
+        } catch {
+            return false
+        }
+    }
+    
+    private func handle(step: HomeStep) async -> Bool {
         switch step {
         case .present(let destination):
             switch destination {
             case .screenB(id: let id):
                 present(destination: .screenB(id: id))
                 return true
-            default:
-                return false
             }
         case .push(let path):
             switch path {
@@ -266,12 +273,93 @@ extension HomeCoordinatorStore: Router {
             case .screenC:
                 push(path: .screenC)
                 return true
-            default:
-                return false
             }
-        case .flow, .tab:
-            return false
         }
     }
 }
 
+enum HomeStep: Decodable {
+    enum Destination: Decodable {
+        case screenB(id: Int)
+
+        private enum CodingKeys: String, CodingKey {
+            case value, id
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let value = try container.decode(String.self, forKey: .value)
+
+            switch value {
+            case "screenB":
+                let id = try container.decode(Int.self, forKey: .id)
+                self = .screenB(id: id)
+            default:
+                throw DecodingError.dataCorruptedError(forKey: .value, in: container, debugDescription: "Invalid Destination: \(value)")
+            }
+        }
+    }
+
+    enum Path: Decodable {
+        case screenA
+        case screenB(id: Int)
+        case screenC
+
+        private enum CodingKeys: String, CodingKey {
+            case value, id
+        }
+
+        init(from decoder: Decoder) throws {
+            // First, try as a single string value
+            if let container = try? decoder.singleValueContainer(),
+               let stringValue = try? container.decode(String.self) {
+                switch stringValue {
+                case "screenA": self = .screenA
+                case "screenC": self = .screenC
+                default:
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid Path value: \(stringValue)")
+                }
+                return
+            }
+
+            // Otherwise try decoding as a full object
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let value = try container.decode(String.self, forKey: .value)
+
+            switch value {
+            case "screenB":
+                let id = try container.decode(Int.self, forKey: .id)
+                self = .screenB(id: id)
+            default:
+                throw DecodingError.dataCorruptedError(forKey: .value, in: container, debugDescription: "Invalid Path: \(value)")
+            }
+        }
+    }
+
+    case present(Destination)
+    case push(Path)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case value
+    }
+
+    private enum StepType: String, Decodable {
+        case present
+        case push
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(StepType.self, forKey: .type)
+
+        switch type {
+        case .present:
+            let destination = try container.decode(Destination.self, forKey: .value)
+            self = .present(destination)
+        case .push:
+            let path = try container.decode(Path.self, forKey: .value)
+            self = .push(path)
+        }
+    }
+}

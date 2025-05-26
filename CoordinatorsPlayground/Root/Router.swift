@@ -11,8 +11,9 @@ import Foundation
 protocol Router {
     var onUnhandledRoute: (Route) async -> Bool { get }
     var childRouters: [Router] { get }
+    
     func handle(route: Route) async -> Bool
-    func handle(step: Route.Step) async -> Bool
+    func handle(step: Data) async -> Bool
 }
 
 extension Router {
@@ -44,5 +45,21 @@ extension Router {
         }
         
         return true
+    }
+}
+
+@MainActor
+protocol StateRestoring {
+    func saveState() throws -> [Data]
+    func restoreState(from data: [Data]) throws
+}
+
+extension StateRestoring {
+    func encode<T: Encodable>(_ state: T) throws -> Data {
+        try JSONEncoder().encode(state)
+    }
+    
+    func decode<T: Decodable>(_ data: Data, as type: T.Type) throws -> T {
+        try JSONDecoder().decode(T.self, from: data)
     }
 }

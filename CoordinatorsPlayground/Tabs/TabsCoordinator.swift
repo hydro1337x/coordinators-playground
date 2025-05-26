@@ -31,7 +31,7 @@ struct TabsCoordinator: View {
 
 @MainActor
 class TabsCoordinatorStore: ObservableObject {
-    enum Tab: CaseIterable {
+    enum Tab: CaseIterable, Codable {
         case home
         case second
     }
@@ -92,7 +92,16 @@ extension TabsCoordinatorStore: Router {
         tabFeatures.values.compactMap { $0.as(type: Router.self) }
     }
     
-    func handle(step: Route.Step) async -> Bool {
+    func handle(step: Data) async -> Bool {
+        do {
+            let step = try JSONDecoder().decode(TabsStep.self, from: step)
+            return await handle(step: step)
+        } catch {
+            return false
+        }
+    }
+    
+    private func handle(step: TabsStep) async -> Bool {
         switch step {
         case .tab(let tab):
             switch tab {
@@ -103,8 +112,54 @@ extension TabsCoordinatorStore: Router {
                 show(tab: .second)
                 return true
             }
-        case .flow, .present, .push:
-            return false
+        }
+    }
+}
+
+struct TabsState: Codable {
+    let tab: TabsCoordinatorStore.Tab
+}
+
+extension TabsCoordinatorStore: StateRestoring {
+    func saveState() throws -> [Data] {
+        let state = TabsState(tab: tab)
+        return [try encode(state)]
+    }
+    
+    func restoreState(from data: [Data]) throws {
+        guard let first = data.first else { return }
+        
+        let state = try decode(first, as: TabsState.self)
+        
+        self.tab = state.tab
+    }
+}
+
+enum TabsStep: Decodable {
+    enum Tab: String, Decodable {
+        case home
+        case profile
+    }
+    
+    case tab(Tab)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case value
+    }
+
+    private enum StepType: String, Decodable {
+        case tab
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(StepType.self, forKey: .type)
+
+        switch type {
+        case .tab:
+            let tab = try container.decode(Tab.self, forKey: .value)
+            self = .tab(tab)
         }
     }
 }

@@ -44,15 +44,15 @@ struct RootCoordinator: View {
 
 @MainActor
 class RootCoordinatorStore: ObservableObject {
-    enum Destination: Identifiable, Hashable {
-        enum Sheet: Identifiable {
+    enum Destination: Identifiable, Hashable, Codable {
+        enum Sheet: Identifiable, Codable {
             case auth
             case account
             
             var id: AnyHashable { self }
         }
         
-        enum FullscreenCover: Identifiable {
+        enum FullscreenCover: Identifiable, Codable {
             case onboarding
             
             var id: AnyHashable { self }
@@ -217,7 +217,16 @@ extension RootCoordinatorStore: Router {
         return true
     }
     
-    func handle(step: Route.Step) async -> Bool {
+    func handle(step: Data) async -> Bool {
+        do {
+            let step = try JSONDecoder().decode(RootStep.self, from: step)
+            return await handle(step: step)
+        } catch {
+            return false
+        }
+    }
+    
+    private func handle(step: RootStep) async -> Bool {
         switch step {
         case .present(let destination):
             switch destination {
@@ -227,16 +236,125 @@ extension RootCoordinatorStore: Router {
             case .account(let authToken):
                 await handleAccountRoute(with: authToken)
                 return true
-            default:
-                return false
             }
         case .flow:
             // If tabs should get deinited for some other flow
             // For example if Auth Screen was not a global modal, but a separate flow from Tabs it would be handeled here
             // Just propagate for now to fulfill the whole app flow without skips
             return true
-        case .tab, .push:
-            return false
+        }
+    }
+}
+
+struct RootState: Codable {
+    let destination: RootCoordinatorStore.Destination?
+}
+
+struct RestorableState: Codable {
+    let step: Data
+    let children: [Data]
+}
+
+extension RootCoordinatorStore: StateRestoring {
+    func saveState() throws -> [Data] {
+        let children = [tabsCoordinator].compactMap { $0?.as(type: StateRestoring.self) }
+        var data = try children.flatMap { try $0.saveState() }
+        let state = RootState(destination: destination)
+        data.insert(try encode(state), at: 0)
+        return data
+    }
+    
+    func restoreState(from data: [Data]) throws {
+        guard let first = data.first else { return }
+        let data = Array(data.dropFirst())
+        
+        let state = try decode(first, as: RootState.self)
+        
+        if let destination = state.destination {
+            makeFeature(for: destination)
+            self.destination = destination
+        }
+        
+        let children = [tabsCoordinator].compactMap { $0?.as(type: StateRestoring.self) }
+        try children.forEach { try $0.restoreState(from: data) }
+    }
+}
+
+enum RootStep: Decodable {
+    enum Destination: Decodable {
+        case login
+        case account(authToken: String?)
+
+        enum CodingKeys: String, CodingKey {
+            case value
+            case authToken
+        }
+
+        init(from decoder: Decoder) throws {
+            // Handle simple single-value cases (e.g., "login")
+            if let container = try? decoder.singleValueContainer(),
+               let string = try? container.decode(String.self),
+               string == "login" {
+                self = .login
+                return
+            }
+
+            // Handle object cases (e.g., { "value": "account", "authToken": "..." })
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let value = try container.decode(String.self, forKey: .value)
+
+            switch value {
+            case "account":
+                let token = try container.decodeIfPresent(String.self, forKey: .authToken)
+                self = .account(authToken: token)
+            default:
+                throw DecodingError.dataCorruptedError(
+                    forKey: .value,
+                    in: container,
+                    debugDescription: "Unknown Destination value: \(value)"
+                )
+            }
+        }
+    }
+
+    enum Flow: Decodable {
+        case tabs
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+            switch string {
+            case "tabs": self = .tabs
+            default:
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unknown flow: \(string)")
+            }
+        }
+    }
+
+    case present(Destination)
+    case flow(Flow)
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case value
+    }
+
+    enum StepType: String, Decodable {
+        case present
+        case flow
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(StepType.self, forKey: .type)
+
+        switch type {
+        case .present:
+            let destination = try container.decode(Destination.self, forKey: .value)
+            self = .present(destination)
+        case .flow:
+            let flow = try container.decode(Flow.self, forKey: .value)
+            self = .flow(flow)
         }
     }
 }

@@ -118,18 +118,51 @@ class AccountCoordinatorStore: ObservableObject {
 extension AccountCoordinatorStore: Router {
     var childRouters: [any Router] { [] }
     
-    func handle(step: Route.Step) async -> Bool {
+    func handle(step: Data) async -> Bool {
+        do {
+            let step = try JSONDecoder().decode(AccountStep.self, from: step)
+            return await handle(step: step)
+        } catch {
+            return false
+        }
+    }
+    
+    private func handle(step: AccountStep) async -> Bool {
         switch step {
         case .push(let path):
             switch path {
             case .accountDetails:
                 push(path: .details)
                 return true
-            default:
-                return false
             }
-        case .flow, .tab, .present:
-            return false
+        }
+    }
+}
+
+enum AccountStep: Decodable {
+    enum Path: String, Decodable {
+        case accountDetails
+    }
+
+    case push(Path)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case value
+    }
+
+    private enum StepType: String, Decodable {
+        case push
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(StepType.self, forKey: .type)
+
+        switch type {
+        case .push:
+            let path = try container.decode(Path.self, forKey: .value)
+            self = .push(path)
         }
     }
 }
