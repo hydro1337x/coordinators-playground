@@ -14,6 +14,7 @@ struct RootCoordinatorFactory {
     let authService: AuthTokenLoginService & LogoutService
     let accountCoordinatorFactory: AccountCoordinatorFactory
     let tabsCoordinatorFactory: TabsCoordinatorFactory
+    let themeManager: SetThemeService
     
     func makeAuthCoordinator(onFinished: @escaping () -> Void) -> Feature {
         let store = AuthCoordinatorStore(authStateService: authStateService, authService: authService)
@@ -23,7 +24,7 @@ struct RootCoordinatorFactory {
     }
     
     func makeAccountCoordinator(onFinished: @escaping () -> Void) -> Feature {
-        let store = AccountCoordinatorStore(logoutService: authService, factory: accountCoordinatorFactory)
+        let store = AccountCoordinatorStore(logoutService: authService, themeService: themeManager, factory: accountCoordinatorFactory)
         store.onFinished = onFinished
         let view = AccountCoordinator(store: store)
         return Feature(view: view, store: store)

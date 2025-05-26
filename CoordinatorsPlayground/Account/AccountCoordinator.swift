@@ -14,6 +14,18 @@ struct AccountCoordinator: View {
         NavigationStack(path: .init(get: { store.path }, set: { store.handlePathChanged($0) })) {
             VStack {
                 Text("User Bob Account")
+                VStack {
+                    Text("Theme")
+                    HStack {
+                        Button("Light") {
+                            Task {  await store.handleLightThemeButtonTapped() }
+                        }
+                        
+                        Button("Dark") {
+                            Task { await store.handleDarkThemeButtonTapped() }
+                        }
+                    }
+                }
                 Spacer()
                 Button("Logout") {
                     Task { await store.handleLogoutButtonTapped() }
@@ -52,10 +64,12 @@ class AccountCoordinatorStore: ObservableObject {
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
     private let logoutService: LogoutService
+    private let themeService: SetThemeService
     private let factory: AccountCoordinatorFactory
     
-    init(logoutService: LogoutService, factory: AccountCoordinatorFactory) {
+    init(logoutService: LogoutService, themeService: SetThemeService, factory: AccountCoordinatorFactory) {
         self.logoutService = logoutService
+        self.themeService = themeService
         self.factory = factory
     }
     
@@ -79,6 +93,14 @@ class AccountCoordinatorStore: ObservableObject {
         case .details:
             pathFeatures[path] = factory.makeAccountDetails()
         }
+    }
+    
+    func handleLightThemeButtonTapped() async {
+        await themeService.set(theme: .light)
+    }
+    
+    func handleDarkThemeButtonTapped() async {
+        await themeService.set(theme: .dark)
     }
     
     func handleLogoutButtonTapped() async {

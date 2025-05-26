@@ -10,6 +10,7 @@ import SwiftUI
 // MARK: - Root Screen
 
 struct HomeScreen: View {
+    @Environment(\.theme) var theme: Theme
     @ObservedObject var store: HomeScreenStore
     
     var body: some View {
@@ -19,6 +20,7 @@ struct HomeScreen: View {
                 Text("Push A")
             }
         }
+        .background(theme.background)
     }
 }
 
