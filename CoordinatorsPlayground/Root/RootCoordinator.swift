@@ -186,7 +186,7 @@ class RootCoordinatorStore: ObservableObject {
 }
 
 extension RootCoordinatorStore: Routable {
-    func handle(step: RootStep) async -> Bool {
+    func handle(step: RootStep) async {
         print("Step: \(step)")
         
         switch step {
@@ -194,16 +194,14 @@ extension RootCoordinatorStore: Routable {
             switch destination {
             case .login:
                 present(destination: .sheet(.auth))
-                return true
             case .account(let authToken):
                 await handleAccountRoute(with: authToken)
-                return true
             }
         case .flow:
             // If tabs should get deinited for some other flow
             // For example if Auth Screen was not a global modal, but a separate flow from Tabs it would be handeled here
             // Just propagate for now to fulfill the whole app flow without skips
-            return true
+            break
         }
     }
 }

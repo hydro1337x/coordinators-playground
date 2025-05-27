@@ -247,26 +247,22 @@ class HomeCoordinatorStore: ObservableObject {
 }
 
 extension HomeCoordinatorStore: Routable {
-    func handle(step: HomeStep) async -> Bool {
+    func handle(step: HomeStep) async {
         print("Step: \(step)")
         switch step {
         case .present(let destination):
             switch destination {
             case .screenB(id: let id):
                 present(destination: .screenB(id: id))
-                return true
             }
         case .push(let path):
             switch path {
             case .screenA:
                 push(path: .screenA)
-                return true
             case .screenB(let id):
                 push(path: .screenB(id: id))
-                return true
             case .screenC:
                 push(path: .screenC)
-                return true
             }
         }
     }

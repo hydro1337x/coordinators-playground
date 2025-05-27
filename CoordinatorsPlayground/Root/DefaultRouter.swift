@@ -26,7 +26,8 @@ class DefaultRouter<S: Decodable>: Router {
         guard let routable else { return false }
         do {
             let step = try JSONDecoder().decode(Step.self, from: step)
-            return await routable.handle(step: step)
+            await routable.handle(step: step)
+            return true
         } catch {
             return false
         }

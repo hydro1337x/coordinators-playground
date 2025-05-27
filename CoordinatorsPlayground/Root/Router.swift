@@ -13,7 +13,7 @@ import Foundation
 protocol Routable<Step>: AnyObject {
     associatedtype Step: Decodable
     var router: any Router<Step> { get }
-    func handle(step: Step) async -> Bool
+    func handle(step: Step) async
 }
 
 @MainActor

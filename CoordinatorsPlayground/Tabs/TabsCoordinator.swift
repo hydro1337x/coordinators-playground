@@ -90,17 +90,15 @@ class TabsCoordinatorStore: ObservableObject {
 }
 
 extension TabsCoordinatorStore: Routable {
-    func handle(step: TabsStep) async -> Bool {
+    func handle(step: TabsStep) async {
         print("Step: \(step)")
         switch step {
         case .tab(let tab):
             switch tab {
             case .home:
                 show(tab: .home)
-                return true
             case .profile:
                 show(tab: .second)
-                return true
             }
         }
     }

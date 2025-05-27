@@ -11,7 +11,6 @@ class RootRouter<S: Decodable>: Router {
     typealias Step = S
     
     weak private var routable: (any Routable<Step>)?
-
     private var childRoutables: (() -> [any Routable])?
     
     private var childRouters: [any Router] { childRoutables?().map { $0.router } ?? [] }
@@ -31,7 +30,8 @@ class RootRouter<S: Decodable>: Router {
         guard let routable else { return false }
         do {
             let step = try JSONDecoder().decode(Step.self, from: step)
-            return await routable.handle(step: step)
+            await routable.handle(step: step)
+            return true
         } catch {
             return false
         }
