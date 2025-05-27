@@ -11,20 +11,20 @@ import Foundation
 struct TabsCoordinatorFactory {
     let authStateService: AuthStateStreamService
     let homeCoordinatorFactory: HomeCoordinatorFactory
+    let homeRouter: any Router<HomeStep>
     
     func makeHomeCoordinator(
         onAccountButtonTapped: @escaping () -> Void,
-        onLoginButtonTapped: @escaping () -> Void,
-        onUnhandledRoute: @escaping (Route) async -> Bool
+        onLoginButtonTapped: @escaping () -> Void
     ) -> Feature {
         let store = HomeCoordinatorStore(
             path: [],
             authStateService: authStateService,
-            factory: homeCoordinatorFactory
+            factory: homeCoordinatorFactory,
+            router: homeRouter
         )
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
-        store.onUnhandledRoute = onUnhandledRoute
         let view = HomeCoordinator(store: store)
         return Feature(view: view, store: store)
     }

@@ -61,16 +61,21 @@ class AccountCoordinatorStore: ObservableObject {
     private(set) var pathFeatures: [Path: Feature] = [:]
     
     var onFinished: () -> Void = unimplemented()
-    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
     private let logoutService: LogoutService
     private let themeService: SetThemeService
     private let factory: AccountCoordinatorFactory
+    let router: any Router<AccountStep>
     
-    init(logoutService: LogoutService, themeService: SetThemeService, factory: AccountCoordinatorFactory) {
+    init(logoutService: LogoutService, themeService: SetThemeService, factory: AccountCoordinatorFactory, router: any Router<AccountStep>) {
         self.logoutService = logoutService
         self.themeService = themeService
         self.factory = factory
+        self.router = router
+        
+        router.setup(using: self, childRoutables: {
+            []
+        })
     }
     
     deinit {
@@ -115,10 +120,9 @@ class AccountCoordinatorStore: ObservableObject {
     }
 }
 
-extension AccountCoordinatorStore: Router {
-    var childRouters: [any Router] { [] }
-    
+extension AccountCoordinatorStore: Routable {
     func handle(step: AccountStep) async -> Bool {
+        print("Step: \(step)")
         switch step {
         case .push(let path):
             switch path {

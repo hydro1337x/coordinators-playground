@@ -113,20 +113,31 @@ class HomeCoordinatorStore: ObservableObject {
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
-    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
     private let authStateService: AuthStateStreamService
     private let factory: HomeCoordinatorFactory
+    let router: any Router<HomeStep>
     
-    init(path: [Path], authStateService: AuthStateStreamService, factory: HomeCoordinatorFactory) {
+    init(path: [Path], authStateService: AuthStateStreamService, factory: HomeCoordinatorFactory, router: any Router<HomeStep>) {
         self.authStateService = authStateService
         self.factory = factory
+        self.router = router
         self.rootFeature = factory.makeHomeScreen(onButtonTap: { [weak self] in
             self?.push(path: .screenA)
         })
         path.forEach { makeFeature(for:$0) }
         
         self.path = path
+        
+        router.setup(using: self, childRoutables: { [weak self] in
+            guard let self else { return [] }
+            return [
+                [self.destinationFeature?.as(type: (any Routable).self)],
+                self.pathFeatures.values.map { $0.as(type: (any Routable).self) }
+            ]
+            .flatMap { $0 }
+            .compactMap { $0 }
+        })
     }
     
     deinit {
@@ -235,17 +246,9 @@ class HomeCoordinatorStore: ObservableObject {
     }
 }
 
-extension HomeCoordinatorStore: Router {
-    var childRouters: [any Router] {
-        [
-            [destinationFeature?.as(type: (any Router).self)],
-            pathFeatures.values.map { $0.as(type: (any Router).self) }
-        ]
-        .flatMap { $0 }
-        .compactMap { $0 }
-    }
-    
+extension HomeCoordinatorStore: Routable {
     func handle(step: HomeStep) async -> Bool {
+        print("Step: \(step)")
         switch step {
         case .present(let destination):
             switch destination {

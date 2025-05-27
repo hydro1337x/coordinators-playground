@@ -15,6 +15,8 @@ struct RootCoordinatorFactory {
     let accountCoordinatorFactory: AccountCoordinatorFactory
     let tabsCoordinatorFactory: TabsCoordinatorFactory
     let themeManager: SetThemeService
+    let tabsRouter: any Router<TabsStep>
+    let accountRouter: any Router<AccountStep>
     
     func makeAuthCoordinator(onFinished: @escaping () -> Void) -> Feature {
         let store = AuthCoordinatorStore(authStateService: authStateService, authService: authService)
@@ -24,7 +26,12 @@ struct RootCoordinatorFactory {
     }
     
     func makeAccountCoordinator(onFinished: @escaping () -> Void) -> Feature {
-        let store = AccountCoordinatorStore(logoutService: authService, themeService: themeManager, factory: accountCoordinatorFactory)
+        let store = AccountCoordinatorStore(
+            logoutService: authService,
+            themeService: themeManager,
+            factory: accountCoordinatorFactory,
+            router: accountRouter
+        )
         store.onFinished = onFinished
         let view = AccountCoordinator(store: store)
         return Feature(view: view, store: store)
@@ -37,14 +44,14 @@ struct RootCoordinatorFactory {
         return Feature(view: view, store: store)
     }
     
-    func makeTabsCoordinator(onAccountButtonTapped: @escaping () -> Void, onLoginButtonTapped: @escaping () -> Void, onUnhandledRoute: @escaping (Route) async -> Bool) -> Feature {
+    func makeTabsCoordinator(onAccountButtonTapped: @escaping () -> Void, onLoginButtonTapped: @escaping () -> Void) -> Feature {
         let store = TabsCoordinatorStore(
             selectedTab: .second,
-            factory: tabsCoordinatorFactory
+            factory: tabsCoordinatorFactory,
+            router: tabsRouter
         )
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
-        store.onUnhandledRoute = onUnhandledRoute
         let view = TabsCoordinator(store: store)
         return Feature(view: view, store: store)
     }

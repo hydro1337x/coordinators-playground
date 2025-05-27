@@ -42,15 +42,21 @@ class TabsCoordinatorStore: ObservableObject {
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
-    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
     private let factory: TabsCoordinatorFactory
+    let router: any Router<TabsStep>
     
-    init(selectedTab: Tab, factory: TabsCoordinatorFactory) {
+    init(selectedTab: Tab, factory: TabsCoordinatorFactory, router: any Router<TabsStep>) {
         self.factory = factory
+        self.router = router
         self.tab = selectedTab
         
         Tab.allCases.forEach { makeFeature(for: $0) }
+        
+        router.setup(using: self, childRoutables: { [weak self] in
+            guard let self else { return [] }
+            return self.tabFeatures.values.compactMap { $0.as(type: (any Routable).self) }
+        })
     }
     
     deinit {
@@ -66,10 +72,6 @@ class TabsCoordinatorStore: ObservableObject {
                 },
                 onLoginButtonTapped: { [weak self] in
                     self?.onLoginButtonTapped()
-                },
-                onUnhandledRoute: { [weak self] route in
-                    guard let self else { return false }
-                    return await self.onUnhandledRoute(route)
                 }
             )
             tabFeatures[tab] = feature
@@ -87,12 +89,9 @@ class TabsCoordinatorStore: ObservableObject {
     }
 }
 
-extension TabsCoordinatorStore: Router {
-    var childRouters: [any Router] {
-        tabFeatures.values.compactMap { $0.as(type: (any Router).self) }
-    }
-    
+extension TabsCoordinatorStore: Routable {
     func handle(step: TabsStep) async -> Bool {
+        print("Step: \(step)")
         switch step {
         case .tab(let tab):
             switch tab {

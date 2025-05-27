@@ -7,70 +7,46 @@
 
 import Foundation
 
+// MARK: Can be simplifed so handle(step:) doesn't return Bool since now it's typesafe so if decoding for a step passes all will be handled.
+
 @MainActor
-protocol Router {
+protocol Routable<Step>: AnyObject {
     associatedtype Step: Decodable
-    
-    var onUnhandledRoute: (Route) async -> Bool { get }
-    var childRouters: [any Router] { get }
-    
-    func handle(route: Route) async -> Bool
+    var router: any Router<Step> { get }
     func handle(step: Step) async -> Bool
 }
 
-extension Router {
-    func handle(step: Data) async -> Bool {
-        do {
-            let step = try JSONDecoder().decode(Step.self, from: step)
-            return await handle(step: step)
-        } catch {
-            return false
-        }
-    }
-    
-    func handle(route: Route) async -> Bool {
-        let didHandleStep = await handle(step: route.step)
-        
-        guard didHandleStep else {
-            return await onUnhandledRoute(route)
-        }
-        
-        return await handle(childRoutes: route.children, using: childRouters)
-    }
-    
-    func handle(childRoutes: [Route], using childRouters: [any Router]) async -> Bool {
-        for route in childRoutes {
-            var didHandleStep = false
-            
-            for router in childRouters {
-                if await router.handle(route: route) {
-                    didHandleStep = true
-                    break
-                }
-            }
-            
-            // If none of the child routers handled this child route
-            if !didHandleStep {
-                return await onUnhandledRoute(route)
-            }
-        }
-        
-        return true
-    }
-}
-
 @MainActor
-protocol StateRestoring {
-    func saveState() throws -> [Data]
-    func restoreState(from data: [Data]) throws
+protocol Router<Step>: AnyObject {
+    associatedtype Step: Decodable
+    var onUnhandledRoute: (Route) async -> Bool { get }
+    
+    func handle(route: Route) async -> Bool
+    func setup(using routable: any Routable<Step>, childRoutables: @escaping () -> [any Routable])
 }
 
-extension StateRestoring {
-    func encode<T: Encodable>(_ state: T) throws -> Data {
-        try JSONEncoder().encode(state)
-    }
-    
-    func decode<T: Decodable>(_ data: Data, as type: T.Type) throws -> T {
-        try JSONDecoder().decode(T.self, from: data)
-    }
-}
+//final class LoggingRouterDecorator<Step: Decodable>: Router {
+//    private let wrapped: any Router<Step>
+//    private let logger: (String) -> Void
+//
+//    init(wrapping router: some Router<Step>, logger: @escaping (String) -> Void = { print($0) }) {
+//        self.wrapped = router
+//        self.logger = logger
+//    }
+//
+//    var onUnhandledRoute: (Route) async -> Bool {
+//        wrapped.onUnhandledRoute
+//    }
+//
+//    func setup(using routable: any Routable<Step>, childRoutables: @escaping () -> [any Routable]) {
+//        logger("Router setup with \(routable)")
+//        wrapped.setup(using: routable, childRoutables: childRoutables)
+//    }
+//
+//    func handle(route: Route) async -> Bool {
+//        logger("Handling route: \(route)")
+//        let result = await wrapped.handle(route: route)
+//        logger("Handled route: \(route), success: \(result)")
+//        return result
+//    }
+//}

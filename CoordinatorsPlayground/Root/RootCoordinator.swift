@@ -78,41 +78,34 @@ class RootCoordinatorStore: ObservableObject {
     var sheet: Destination.Sheet? { destination?.sheet }
     var fullscreenCover: Destination.FullscreenCover? { destination?.fullscreenCover }
     
-    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
-    
     private(set) var tabsCoordinator: Feature?
     private(set) var destinationFeature: Feature?
     
     private let authStateService: AuthStateValueService
     private let authService: AuthTokenLoginService
     private let factory: RootCoordinatorFactory
+    let router: any Router<RootStep>
     
-    init(authStateService: AuthStateProvider, authService: AuthTokenLoginService, factory: RootCoordinatorFactory) {
+    init(authStateService: AuthStateProvider, authService: AuthTokenLoginService, factory: RootCoordinatorFactory, router: any Router<RootStep>) {
         self.authStateService = authStateService
         self.authService = authService
         self.factory = factory
+        self.router = router
         let tabsCoordinator = factory.makeTabsCoordinator(
             onAccountButtonTapped: { [weak self] in
                 self?.present(destination: .sheet(.account))
             },
             onLoginButtonTapped: { [weak self] in
                 self?.present(destination: .sheet(.auth))
-            },
-            onUnhandledRoute: { [weak self] route in
-                guard let self else { return false }
-                return await self.onUnhandledRoute(route)
             }
         )
         self.tabsCoordinator = tabsCoordinator
         
-        // Implements its own closure since this is the last stop for handling routes :)
-        onUnhandledRoute = { [weak self] route in
-            guard let self else { return false }
-            return await self.handle(route: route)
-        }
-        
-//        makeStore(for: .fullscreenCover(.onboarding))
-//        self.destination = .fullscreenCover(.onboarding)
+        router.setup(using: self, childRoutables: { [weak self] in
+            guard let self else { return [] }
+            return [self.tabsCoordinator, self.destinationFeature]
+                .compactMap { $0?.as(type: (any Routable).self) }
+        })
     }
     
     deinit {
@@ -192,32 +185,10 @@ class RootCoordinatorStore: ObservableObject {
     }
 }
 
-extension RootCoordinatorStore: Router {
-    var childRouters: [any Router] {
-        [tabsCoordinator, destinationFeature]
-            .compactMap { $0?.as(type: (any Router).self) }
-    }
-    
-    // Has custom handle(route:) since it must not call onUnhandledRoute since it's the root
-    func handle(route: Route) async -> Bool {
-        let didHandleStep = await handle(step: route.step)
-        
-        guard didHandleStep else {
-            return false
-        }
-        
-        for route in route.children {
-            for router in childRouters {
-                if await router.handle(route: route) {
-                    break
-                }
-            }
-        }
-        
-        return true
-    }
-    
+extension RootCoordinatorStore: Routable {
     func handle(step: RootStep) async -> Bool {
+        print("Step: \(step)")
+        
         switch step {
         case .present(let destination):
             switch destination {
