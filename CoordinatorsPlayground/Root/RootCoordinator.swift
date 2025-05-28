@@ -85,12 +85,14 @@ class RootCoordinatorStore: ObservableObject {
     private let authService: AuthTokenLoginService
     private let factory: RootCoordinatorFactory
     let router: any Router<RootStep>
+    let restorer: any Restorer<RootState>
     
-    init(authStateService: AuthStateProvider, authService: AuthTokenLoginService, factory: RootCoordinatorFactory, router: any Router<RootStep>) {
+    init(authStateService: AuthStateProvider, authService: AuthTokenLoginService, factory: RootCoordinatorFactory, router: any Router<RootStep>, restorer: any Restorer<RootState>) {
         self.authStateService = authStateService
         self.authService = authService
         self.factory = factory
         self.router = router
+        self.restorer = restorer
         let tabsCoordinator = factory.makeTabsCoordinator(
             onAccountButtonTapped: { [weak self] in
                 self?.present(destination: .sheet(.account))
@@ -105,6 +107,12 @@ class RootCoordinatorStore: ObservableObject {
             guard let self else { return [] }
             return [self.tabsCoordinator, self.destinationFeature]
                 .compactMap { $0?.as(type: (any Routable).self) }
+        })
+        
+        restorer.setup(using: self, childRestorables: { [weak self] in
+            guard let self else { return [] }
+            return [self.destinationFeature, self.tabsCoordinator]
+                .compactMap { $0?.as(type: (any Restorable).self) }
         })
     }
     
@@ -204,38 +212,19 @@ extension RootCoordinatorStore: Routable {
     }
 }
 
-struct RootState: Codable {
-    let destination: RootCoordinatorStore.Destination?
-}
-
-struct RestorableState: Codable {
-    let step: Data
-    let children: [Data]
-}
-
-extension RootCoordinatorStore: StateRestoring {
-    func saveState() throws -> [Data] {
-        let children = [tabsCoordinator].compactMap { $0?.as(type: StateRestoring.self) }
-        var data = try children.flatMap { try $0.saveState() }
-        let state = RootState(destination: destination)
-        data.insert(try encode(state), at: 0)
-        return data
+extension RootCoordinatorStore: Restorable {
+    func captureState() async -> RootState {
+        return .init(destination: destination)
     }
     
-    func restoreState(from data: [Data]) throws {
-        guard let first = data.first else { return }
-        let data = Array(data.dropFirst())
-        
-        let state = try decode(first, as: RootState.self)
-        
-        if let destination = state.destination {
-            makeFeature(for: destination)
-            self.destination = destination
-        }
-        
-        let children = [tabsCoordinator].compactMap { $0?.as(type: StateRestoring.self) }
-        try children.forEach { try $0.restoreState(from: data) }
+    func restore(state: RootState) async {
+        guard let destination = state.destination else { return }
+        present(destination: destination)
     }
+}
+
+struct RootState: Codable {
+    let destination: RootCoordinatorStore.Destination?
 }
 
 enum RootStep: Decodable {

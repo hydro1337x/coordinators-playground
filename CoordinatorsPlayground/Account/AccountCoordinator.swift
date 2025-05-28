@@ -53,7 +53,7 @@ struct AccountCoordinator: View {
 
 @MainActor
 class AccountCoordinatorStore: ObservableObject {
-    enum Path {
+    enum Path: Codable {
         case details
     }
     
@@ -66,14 +66,20 @@ class AccountCoordinatorStore: ObservableObject {
     private let themeService: SetThemeService
     private let factory: AccountCoordinatorFactory
     let router: any Router<AccountStep>
+    let restorer: any Restorer<AccountState>
     
-    init(logoutService: LogoutService, themeService: SetThemeService, factory: AccountCoordinatorFactory, router: any Router<AccountStep>) {
+    init(logoutService: LogoutService, themeService: SetThemeService, factory: AccountCoordinatorFactory, router: any Router<AccountStep>, restorer: any Restorer<AccountState>) {
         self.logoutService = logoutService
         self.themeService = themeService
         self.factory = factory
         self.router = router
+        self.restorer = restorer
         
         router.setup(using: self, childRoutables: {
+            []
+        })
+        
+        restorer.setup(using: self, childRestorables: {
             []
         })
     }
@@ -130,6 +136,21 @@ extension AccountCoordinatorStore: Routable {
             }
         }
     }
+}
+
+extension AccountCoordinatorStore: Restorable {
+    func captureState() async -> AccountState {
+        return .init(path: path)
+    }
+    
+    func restore(state: AccountState) async {
+        state.path.forEach { makeFeature(for: $0) }
+        self.path = state.path
+    }
+}
+
+struct AccountState: Codable {
+    let path: [AccountCoordinatorStore.Path]
 }
 
 enum AccountStep: Decodable {

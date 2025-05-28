@@ -45,10 +45,12 @@ class TabsCoordinatorStore: ObservableObject {
     
     private let factory: TabsCoordinatorFactory
     let router: any Router<TabsStep>
+    let restorer: any Restorer<TabsState>
     
-    init(selectedTab: Tab, factory: TabsCoordinatorFactory, router: any Router<TabsStep>) {
+    init(selectedTab: Tab, factory: TabsCoordinatorFactory, router: any Router<TabsStep>, restorer: any Restorer<TabsState>) {
         self.factory = factory
         self.router = router
+        self.restorer = restorer
         self.tab = selectedTab
         
         Tab.allCases.forEach { makeFeature(for: $0) }
@@ -56,6 +58,11 @@ class TabsCoordinatorStore: ObservableObject {
         router.setup(using: self, childRoutables: { [weak self] in
             guard let self else { return [] }
             return self.tabFeatures.values.compactMap { $0.as(type: (any Routable).self) }
+        })
+        
+        restorer.setup(using: self, childRestorables: { [weak self] in
+            guard let self else { return [] }
+            return self.tabFeatures.values.compactMap { $0.as(type: (any Restorable).self) }
         })
     }
     
@@ -103,23 +110,18 @@ extension TabsCoordinatorStore: Routable {
     }
 }
 
-struct TabsState: Codable {
-    let tab: TabsCoordinatorStore.Tab
-}
-
-extension TabsCoordinatorStore: StateRestoring {
-    func saveState() throws -> [Data] {
-        let state = TabsState(tab: tab)
-        return [try encode(state)]
+extension TabsCoordinatorStore: Restorable {
+    func captureState() async -> TabsState {
+        return .init(tab: tab)
     }
     
-    func restoreState(from data: [Data]) throws {
-        guard let first = data.first else { return }
-        
-        let state = try decode(first, as: TabsState.self)
-        
-        self.tab = state.tab
+    func restore(state: TabsState) async {
+        show(tab: state.tab)
     }
+}
+
+struct TabsState: Codable {
+    let tab: TabsCoordinatorStore.Tab
 }
 
 enum TabsStep: Decodable {

@@ -17,6 +17,8 @@ class DefaultRouter<S: Decodable>: Router {
     
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
+    private let decoder = JSONDecoder()
+    
     func setup(using routable: any Routable<Step>, childRoutables: @escaping () -> [any Routable]) {
         self.routable = routable
         self.childRoutables = childRoutables
@@ -25,7 +27,7 @@ class DefaultRouter<S: Decodable>: Router {
     func handle(step: Data) async -> Bool {
         guard let routable else { return false }
         do {
-            let step = try JSONDecoder().decode(Step.self, from: step)
+            let step = try decoder.decode(Step.self, from: step)
             await routable.handle(step: step)
             return true
         } catch {

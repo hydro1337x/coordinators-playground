@@ -26,12 +26,14 @@ struct RootCoordinatorFactory {
     
     func makeAccountCoordinator(onFinished: @escaping () -> Void) -> Feature {
         let router = DefaultRouter<AccountStep>()
+        let restorer = DefaultRestorer<AccountState>()
         router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         let store = AccountCoordinatorStore(
             logoutService: authService,
             themeService: themeManager,
             factory: accountCoordinatorFactory,
-            router: LoggingRouterDecorator(decorating: router)
+            router: LoggingRouterDecorator(decorating: router),
+            restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         store.onFinished = onFinished
         let view = AccountCoordinator(store: store)
@@ -47,11 +49,13 @@ struct RootCoordinatorFactory {
     
     func makeTabsCoordinator(onAccountButtonTapped: @escaping () -> Void, onLoginButtonTapped: @escaping () -> Void) -> Feature {
         let router = DefaultRouter<TabsStep>()
+        let restorer = DefaultRestorer<TabsState>()
         router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         let store = TabsCoordinatorStore(
             selectedTab: .second,
             factory: tabsCoordinatorFactory,
-            router: LoggingRouterDecorator(decorating: router)
+            router: LoggingRouterDecorator(decorating: router),
+            restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped

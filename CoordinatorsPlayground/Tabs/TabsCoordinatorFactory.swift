@@ -18,12 +18,13 @@ struct TabsCoordinatorFactory {
         onLoginButtonTapped: @escaping () -> Void
     ) -> Feature {
         let router = DefaultRouter<HomeStep>()
+        let restorer = DefaultRestorer<HomeState>()
         router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         let store = HomeCoordinatorStore(
-            path: [],
             authStateService: authStateService,
             factory: homeCoordinatorFactory,
-            router: LoggingRouterDecorator(decorating: router)
+            router: LoggingRouterDecorator(decorating: router),
+            restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped

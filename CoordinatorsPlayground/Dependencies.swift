@@ -35,6 +35,7 @@ final class Dependencies {
     
     func makeRootCoordinatorStore() -> RootCoordinatorStore {
         let router = RootRouter<RootStep>()
+        let restorer = DefaultRestorer<RootState>()
         rootRouterAdapter.onUnhandledRoute = { route in
             return await router.onUnhandledRoute(route)
         }
@@ -42,7 +43,8 @@ final class Dependencies {
             authStateService: authStateService,
             authService: authService,
             factory: rootCoordinatorFactory,
-            router: LoggingRouterDecorator(decorating: router)
+            router: LoggingRouterDecorator(decorating: router),
+            restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         return store
     }

@@ -9,7 +9,8 @@ import SwiftUI
 
 @main
 struct CoordinatorsPlaygroundApp: App {
-//    @Environment(\.scenePhase) var scenePhase
+    @State var firstAppear = true
+    @Environment(\.scenePhase) var scenePhase
     @StateObject var themeManager: ThemeManager
     let store: RootCoordinatorStore
     
@@ -23,24 +24,24 @@ struct CoordinatorsPlaygroundApp: App {
         WindowGroup {
             RootCoordinator(store: store)
                 .environment(\.theme, themeManager.currentTheme)
-//                .onChange(of: scenePhase) { newPhase in
-//                    if newPhase == .background {
-//                        do {
-//                            let data = try store.saveState()
-//                            UserDefaults.standard.set(data, forKey: "app-state")
-//                        } catch {
-//                            print("State restoration error: \(error)")
-//                        }
-//                    }
-//                }
-//                .onAppear {
-//                    guard let data = UserDefaults.standard.object(forKey: "app-state") as? [Data] else { return }
-//                    do {
-//                        try store.restoreState(from: data)
-//                    } catch {
-//                        print("State restoration error: \(error)")
-//                    }
-//                }
+                .onChange(of: scenePhase) { newPhase in
+                    if newPhase == .background {
+                        Task {
+                            let snapshot = await store.restorer.captureHierarchy()
+                            let json = try? JSONEncoder().encode(snapshot)
+                            UserDefaults.standard.set(json, forKey: "app-state")
+                        }
+                    }
+                }
+                .onAppear {
+                    if firstAppear {
+                        defer { firstAppear = false }
+                        Task {
+                            guard let data = UserDefaults.standard.object(forKey: "app-state") as? Data, let snapshot = try? JSONDecoder().decode(RestorableSnapshot.self, from: data) else { return }
+                            _ = await store.restorer.restore(from: snapshot)
+                        }
+                    }
+                }
                 .onOpenURL { url in
                     /**
                      Test via command:

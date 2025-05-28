@@ -17,7 +17,7 @@ protocol Routable<Step>: AnyObject {
 }
 
 @MainActor
-protocol Router<Step>: AnyObject {
+protocol Router<Step> {
     associatedtype Step: Decodable
     var onUnhandledRoute: (Route) async -> Bool { get }
     

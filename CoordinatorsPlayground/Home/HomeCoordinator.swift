@@ -91,13 +91,13 @@ struct HomeCoordinator: View {
 
 @MainActor
 class HomeCoordinatorStore: ObservableObject {
-    enum Path: Hashable {
+    enum Path: Hashable, Codable {
         case screenA
         case screenB(id: Int)
         case screenC
     }
     
-    enum Destination: Hashable, Identifiable {
+    enum Destination: Hashable, Identifiable, Codable {
         case screenB(id: Int)
         
         var id: AnyHashable { self }
@@ -117,23 +117,32 @@ class HomeCoordinatorStore: ObservableObject {
     private let authStateService: AuthStateStreamService
     private let factory: HomeCoordinatorFactory
     let router: any Router<HomeStep>
+    let restorer: any Restorer<HomeState>
     
-    init(path: [Path], authStateService: AuthStateStreamService, factory: HomeCoordinatorFactory, router: any Router<HomeStep>) {
+    init(authStateService: AuthStateStreamService, factory: HomeCoordinatorFactory, router: any Router<HomeStep>, restorer: any Restorer<HomeState>) {
         self.authStateService = authStateService
         self.factory = factory
         self.router = router
+        self.restorer = restorer
         self.rootFeature = factory.makeHomeScreen(onButtonTap: { [weak self] in
             self?.push(path: .screenA)
         })
-        path.forEach { makeFeature(for:$0) }
-        
-        self.path = path
         
         router.setup(using: self, childRoutables: { [weak self] in
             guard let self else { return [] }
             return [
                 [self.destinationFeature?.as(type: (any Routable).self)],
                 self.pathFeatures.values.map { $0.as(type: (any Routable).self) }
+            ]
+            .flatMap { $0 }
+            .compactMap { $0 }
+        })
+        
+        restorer.setup(using: self, childRestorables: { [weak self] in
+            guard let self else { return [] }
+            return [
+                [self.destinationFeature?.as(type: (any Restorable).self)],
+                self.pathFeatures.values.map { $0.as(type: (any Restorable).self) }
             ]
             .flatMap { $0 }
             .compactMap { $0 }
@@ -265,6 +274,26 @@ extension HomeCoordinatorStore: Routable {
             }
         }
     }
+}
+
+extension HomeCoordinatorStore: Restorable {
+    func captureState() async -> HomeState {
+        return .init(destination: destination, path: path)
+    }
+    
+    func restore(state: HomeState) async {
+        if let destination = state.destination {
+            present(destination: destination)
+        }
+        
+        state.path.forEach { makeFeature(for:$0) }
+        self.path = state.path
+    }
+}
+
+struct HomeState: Codable {
+    let destination: HomeCoordinatorStore.Destination?
+    let path: [HomeCoordinatorStore.Path]
 }
 
 enum HomeStep: Decodable {

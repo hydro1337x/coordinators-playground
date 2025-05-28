@@ -7,8 +7,7 @@
 
 import Foundation
 
-@MainActor
-final class LoggingRouterDecorator<Step: Decodable>: Router {
+struct LoggingRouterDecorator<Step: Decodable>: Router {
     private let decoratee: any Router<Step>
 
     var onUnhandledRoute: (Route) async -> Bool {
