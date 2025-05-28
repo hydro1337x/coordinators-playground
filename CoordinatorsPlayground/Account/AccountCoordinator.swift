@@ -122,7 +122,6 @@ class AccountCoordinatorStore: ObservableObject {
 
 extension AccountCoordinatorStore: Routable {
     func handle(step: AccountStep) async {
-        print("Step: \(step)")
         switch step {
         case .push(let path):
             switch path {

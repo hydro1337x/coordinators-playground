@@ -91,7 +91,6 @@ class TabsCoordinatorStore: ObservableObject {
 
 extension TabsCoordinatorStore: Routable {
     func handle(step: TabsStep) async {
-        print("Step: \(step)")
         switch step {
         case .tab(let tab):
             switch tab {

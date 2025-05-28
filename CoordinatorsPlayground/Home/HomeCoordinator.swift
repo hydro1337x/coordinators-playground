@@ -248,7 +248,6 @@ class HomeCoordinatorStore: ObservableObject {
 
 extension HomeCoordinatorStore: Routable {
     func handle(step: HomeStep) async {
-        print("Step: \(step)")
         switch step {
         case .present(let destination):
             switch destination {

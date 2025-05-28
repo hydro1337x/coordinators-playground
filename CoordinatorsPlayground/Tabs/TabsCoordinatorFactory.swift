@@ -11,17 +11,19 @@ import Foundation
 struct TabsCoordinatorFactory {
     let authStateService: AuthStateStreamService
     let homeCoordinatorFactory: HomeCoordinatorFactory
-    let homeRouter: any Router<HomeStep>
+    let routerAdapter: RootRouterAdapter
     
     func makeHomeCoordinator(
         onAccountButtonTapped: @escaping () -> Void,
         onLoginButtonTapped: @escaping () -> Void
     ) -> Feature {
+        let router = DefaultRouter<HomeStep>()
+        router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         let store = HomeCoordinatorStore(
             path: [],
             authStateService: authStateService,
             factory: homeCoordinatorFactory,
-            router: homeRouter
+            router: LoggingRouterDecorator(decorating: router)
         )
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped

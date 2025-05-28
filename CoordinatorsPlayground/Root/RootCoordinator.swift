@@ -187,8 +187,6 @@ class RootCoordinatorStore: ObservableObject {
 
 extension RootCoordinatorStore: Routable {
     func handle(step: RootStep) async {
-        print("Step: \(step)")
-        
         switch step {
         case .present(let destination):
             switch destination {
