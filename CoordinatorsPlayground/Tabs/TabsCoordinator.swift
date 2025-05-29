@@ -99,7 +99,7 @@ class TabsCoordinatorStore: ObservableObject {
 extension TabsCoordinatorStore: Routable {
     func handle(step: TabsStep) async {
         switch step {
-        case .tab(let tab):
+        case .change(let tab):
             switch tab {
             case .home:
                 show(tab: .home)
@@ -125,30 +125,10 @@ struct TabsState: Codable {
 }
 
 enum TabsStep: Decodable {
-    enum Tab: String, Decodable {
+    enum Tab: Decodable {
         case home
         case profile
     }
     
-    case tab(Tab)
-
-    private enum CodingKeys: String, CodingKey {
-        case type
-        case value
-    }
-
-    private enum StepType: String, Decodable {
-        case tab
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(StepType.self, forKey: .type)
-
-        switch type {
-        case .tab:
-            let tab = try container.decode(Tab.self, forKey: .value)
-            self = .tab(tab)
-        }
-    }
+    case change(tab: Tab)
 }

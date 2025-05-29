@@ -203,7 +203,7 @@ extension RootCoordinatorStore: Routable {
             case .account(let authToken):
                 await handleAccountRoute(with: authToken)
             }
-        case .flow:
+        case .transition:
             // If tabs should get deinited for some other flow
             // For example if Auth Screen was not a global modal, but a separate flow from Tabs it would be handeled here
             // Just propagate for now to fulfill the whole app flow without skips
@@ -231,77 +231,12 @@ enum RootStep: Decodable {
     enum Destination: Decodable {
         case login
         case account(authToken: String?)
-
-        enum CodingKeys: String, CodingKey {
-            case value
-            case authToken
-        }
-
-        init(from decoder: Decoder) throws {
-            // Handle simple single-value cases (e.g., "login")
-            if let container = try? decoder.singleValueContainer(),
-               let string = try? container.decode(String.self),
-               string == "login" {
-                self = .login
-                return
-            }
-
-            // Handle object cases (e.g., { "value": "account", "authToken": "..." })
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            let value = try container.decode(String.self, forKey: .value)
-
-            switch value {
-            case "account":
-                let token = try container.decodeIfPresent(String.self, forKey: .authToken)
-                self = .account(authToken: token)
-            default:
-                throw DecodingError.dataCorruptedError(
-                    forKey: .value,
-                    in: container,
-                    debugDescription: "Unknown Destination value: \(value)"
-                )
-            }
-        }
     }
 
     enum Flow: Decodable {
         case tabs
-
-        init(from decoder: Decoder) throws {
-            let container = try decoder.singleValueContainer()
-            let string = try container.decode(String.self)
-            switch string {
-            case "tabs": self = .tabs
-            default:
-                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unknown flow: \(string)")
-            }
-        }
     }
 
-    case present(Destination)
-    case flow(Flow)
-
-    enum CodingKeys: String, CodingKey {
-        case type
-        case value
-    }
-
-    enum StepType: String, Decodable {
-        case present
-        case flow
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(StepType.self, forKey: .type)
-
-        switch type {
-        case .present:
-            let destination = try container.decode(Destination.self, forKey: .value)
-            self = .present(destination)
-        case .flow:
-            let flow = try container.decode(Flow.self, forKey: .value)
-            self = .flow(flow)
-        }
-    }
+    case present(destination: Destination)
+    case transition(flow: Flow)
 }

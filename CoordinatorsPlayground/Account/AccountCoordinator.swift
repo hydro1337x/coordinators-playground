@@ -154,29 +154,9 @@ struct AccountState: Codable {
 }
 
 enum AccountStep: Decodable {
-    enum Path: String, Decodable {
+    enum Path: Decodable {
         case accountDetails
     }
 
-    case push(Path)
-
-    private enum CodingKeys: String, CodingKey {
-        case type
-        case value
-    }
-
-    private enum StepType: String, Decodable {
-        case push
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(StepType.self, forKey: .type)
-
-        switch type {
-        case .push:
-            let path = try container.decode(Path.self, forKey: .value)
-            self = .push(path)
-        }
-    }
+    case push(path: Path)
 }

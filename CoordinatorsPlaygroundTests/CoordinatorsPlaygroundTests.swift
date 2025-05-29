@@ -10,75 +10,74 @@ import Testing
 @testable import CoordinatorsPlayground
 
 struct CoordinatorsPlaygroundTests {
-    
 //    {
 //      "step": {
-//        "type": "flow",
-//        "value": "tabs"
+//          "transition": {
+//              "flow": {
+//                  "tabs": {}
+//              }
+//          }
 //      },
 //      "children": [
 //        {
 //          "step": {
-//            "type": "tab",
-//            "value": "home"
+//              "change": {
+//                  "tab": {
+//                      "home": {}
+//                  }
+//              }
 //          },
 //          "children": [
 //            {
 //              "step": {
-//                "type": "push",
-//                "value": "screenA"
+//                  "push": {
+//                      "path": {
+//                          "screenA": {}
+//                      }
+//                  }
 //              },
 //              "children": []
 //            },
 //            {
 //              "step": {
-//                "type": "push",
-//                "value": {
-//                  "value": "screenB",
-//                  "id": 1
+//                "push": {
+//                    "path": {
+//                        "screenB": {
+//                          "id": 1
+//                        }
+//                    }
 //                }
 //              },
 //              "children": []
 //            },
 //            {
 //              "step": {
-//                "type": "push",
-//                "value": "screenC"
+//                  "push": {
+//                      "path": {
+//                          "screenC": {}
+//                      }
+//                  }
 //              },
 //              "children": []
-//            }
-//          ]
-//        }
-//      ]
-//    }
-    
-    
-    
-//    {
-//      "step": {
-//        "type": "flow",
-//        "value": "tabs"
-//      },
-//      "children": [
-//        {
-//          "step": {
-//            "type": "tab",
-//            "value": "home"
-//          },
-//          "children": [
+//            },
 //            {
 //              "step": {
-//                "type": "present",
-//                "value": {
-//                  "value": "account",
-//                  "authToken": "secretToken"
+//                "present": {
+//                    "destination": {
+//                        "account": {
+//                          "authToken": "secretToken"
+//                        }
+//                    }
 //                }
 //              },
 //              "children": [
 //                {
 //                  "step": {
-//                    "type": "push",
-//                    "value": "accountDetails"
+//                      "push": {
+//                          "path": {
+//                              "accountDetails": {}
+//                          }
+//                      }
 //                  },
 //                  "children": []
 //                }
@@ -88,71 +87,4 @@ struct CoordinatorsPlaygroundTests {
 //        }
 //      ]
 //    }
-    
-//    {
-//      "step": {
-//        "type": "flow",
-//        "value": "tabs"
-//      },
-//      "children": [
-//        {
-//          "step": {
-//            "type": "tab",
-//            "value": "home"
-//          },
-//          "children": [
-//            {
-//              "step": {
-//                "type": "push",
-//                "value": "screenA"
-//              },
-//              "children": []
-//            },
-//            {
-//              "step": {
-//                "type": "push",
-//                "value": {
-//                  "value": "screenB",
-//                  "id": 1
-//                }
-//              },
-//              "children": []
-//            },
-//            {
-//              "step": {
-//                "type": "push",
-//                "value": "screenC"
-//              },
-//              "children": []
-//            },
-//            {
-//              "step": {
-//                "type": "present",
-//                "value": {
-//                  "value": "account",
-//                  "authToken": "secretToken"
-//                }
-//              },
-//              "children": [
-//                {
-//                  "step": {
-//                    "type": "push",
-//                    "value": "accountDetails"
-//                  },
-//                  "children": []
-//                }
-//              ]
-//            }
-//          ]
-//        }
-//      ]
-//    }
-    
-
-//    @Test func example() async throws {
-//        let url = URL(string: "coordinatorsplayground://deeplink?payload=W3sidmFsdWUiOiAidGFicyJ9LCB7InZhbHVlIjogImhvbWUifSwgeyJ2YWx1ZSI6ICJzY3JlZW5BIn0sIHsidmFsdWUiOiAic2NyZWVuQiIsICJwYXJhbWV0ZXJzIjogeyJpZCI6ICIxIn19LCB7InZhbHVlIjogInNjcmVlbkMifV0=")!
-//        
-//        #expect(DeepLinkParser.parse(url) == [.tabs, .home, .screenA, .screenB(id: 1), .screenC])
-//    }
-
 }
