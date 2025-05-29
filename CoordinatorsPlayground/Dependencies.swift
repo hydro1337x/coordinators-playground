@@ -14,7 +14,9 @@ final class RootRouterAdapter {
 @MainActor
 final class Dependencies {
     lazy var rootRouterAdapter = RootRouterAdapter()
-    lazy var themeManager = ThemeManager()
+    lazy var themeService = UserDefaultsThemeService()
+    lazy var themeStore = ThemeStore(themeService: themeService)
+    lazy var snapshotService = UserDefaultsRestorableSnapshotService()
     lazy var authStateService = AuthStateProvider()
     lazy var authService = AuthService(service: authStateService)
     lazy var accountCoordinatorFactory = AccountCoordinatorFactory()
@@ -29,11 +31,11 @@ final class Dependencies {
         authService: authService,
         accountCoordinatorFactory: accountCoordinatorFactory,
         tabsCoordinatorFactory: tabsCoordinatorFactory,
-        themeManager: themeManager,
+        themeService: themeService,
         routerAdapter: rootRouterAdapter
     )
     
-    func makeRootCoordinatorStore() -> RootCoordinatorStore {
+    func makeRootCoordinator() -> Feature {
         let router = RootRouter<RootStep>()
         let restorer = DefaultRestorer<RootState>()
         rootRouterAdapter.onUnhandledRoute = { route in
@@ -45,6 +47,16 @@ final class Dependencies {
             factory: rootCoordinatorFactory,
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
+        )
+        let view = RootCoordinator(store: store)
+        return Feature(view: view, store: store)
+    }
+    
+    func makeAppStore() -> AppStore {
+        let store = AppStore(
+            makeRootFeature: makeRootCoordinator,
+            themeStore: themeStore,
+            snapshotService: snapshotService
         )
         return store
     }

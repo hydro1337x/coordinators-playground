@@ -14,7 +14,7 @@ struct RootCoordinatorFactory {
     let authService: AuthTokenLoginService & LogoutService
     let accountCoordinatorFactory: AccountCoordinatorFactory
     let tabsCoordinatorFactory: TabsCoordinatorFactory
-    let themeManager: ThemeManager
+    let themeService: UserDefaultsThemeService
     let routerAdapter: RootRouterAdapter
     
     func makeAuthCoordinator(onFinished: @escaping () -> Void) -> Feature {
@@ -30,7 +30,7 @@ struct RootCoordinatorFactory {
         router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         let store = AccountCoordinatorStore(
             logoutService: authService,
-            themeService: themeManager,
+            themeService: themeService,
             factory: accountCoordinatorFactory,
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
