@@ -24,7 +24,11 @@ struct Feature: View {
         _view
     }
     
-    func `as`<T>(type: T.Type) -> T? {
+    func cast<T>(to: T.Type) -> T? {
+        _store as? T
+    }
+    
+    func cast<T>() -> T? {
         _store as? T
     }
 }

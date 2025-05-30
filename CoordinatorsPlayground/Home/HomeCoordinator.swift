@@ -130,22 +130,24 @@ class HomeCoordinatorStore: ObservableObject {
         
         router.setup(using: self, childRoutables: { [weak self] in
             guard let self else { return [] }
-            return [
-                [self.destinationFeature?.as(type: (any Routable).self)],
-                self.pathFeatures.values.map { $0.as(type: (any Routable).self) }
-            ]
-            .flatMap { $0 }
-            .compactMap { $0 }
+            return pathFeatures
+                .values
+                .map { $0 }
+                .reduce(into: [destinationFeature]) { partialResult, next in
+                    partialResult.append(next)
+                }
+                .compactMap { $0?.cast() }
         })
         
         restorer.setup(using: self, childRestorables: { [weak self] in
             guard let self else { return [] }
-            return [
-                [self.destinationFeature?.as(type: (any Restorable).self)],
-                self.pathFeatures.values.map { $0.as(type: (any Restorable).self) }
-            ]
-            .flatMap { $0 }
-            .compactMap { $0 }
+            return pathFeatures
+                .values
+                .map { $0 }
+                .reduce(into: [destinationFeature]) { partialResult, next in
+                    partialResult.append(next)
+                }
+                .compactMap { $0?.cast() }
         })
     }
     

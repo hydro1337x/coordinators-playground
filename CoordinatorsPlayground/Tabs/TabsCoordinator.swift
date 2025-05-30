@@ -57,12 +57,12 @@ class TabsCoordinatorStore: ObservableObject {
         
         router.setup(using: self, childRoutables: { [weak self] in
             guard let self else { return [] }
-            return self.tabFeatures.values.compactMap { $0.as(type: (any Routable).self) }
+            return self.tabFeatures.values.compactMap { $0.cast() }
         })
         
         restorer.setup(using: self, childRestorables: { [weak self] in
             guard let self else { return [] }
-            return self.tabFeatures.values.compactMap { $0.as(type: (any Restorable).self) }
+            return self.tabFeatures.values.compactMap { $0.cast() }
         })
     }
     

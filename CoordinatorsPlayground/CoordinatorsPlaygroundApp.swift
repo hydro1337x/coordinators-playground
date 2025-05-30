@@ -74,24 +74,29 @@ final class AppStore: ObservableObject {
          xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=base64EncodedString"
          */
         Task {
-            guard let route = DeepLinkParser.parse(url) else {
-                return
-            }
+            guard
+                let route = DeepLinkParser.parse(url),
+                let restorable: any Routable = rootCoordinator.cast()
+            else { return }
             
-            _ = await rootCoordinator.as(type: (any Routable).self)?.router.handle(route: route)
+            _ = await restorable.router.handle(route: route)
         }
     }
     
     private func restoreState() {
         Task {
-            guard let snapshot = await snapshotService.retrieveSnapshot() else { return }
-            _ = await rootCoordinator.as(type: (any Restorable).self)?.restorer.restore(from: snapshot)
+            guard
+                let snapshot = await snapshotService.retrieveSnapshot(),
+                let restorable: any Restorable = rootCoordinator.cast()
+            else { return }
+            _ = await restorable.restorer.restore(from: snapshot)
         }
     }
     
     private func saveState() {
         Task {
-            guard let snapshot = await rootCoordinator.as(type: (any Restorable).self)?.restorer.captureHierarchy() else { return }
+            guard let restorable: any Restorable = rootCoordinator.cast() else { return }
+            let snapshot = await restorable.restorer.captureHierarchy()
             await snapshotService.save(snapshot: snapshot)
         }
     }
