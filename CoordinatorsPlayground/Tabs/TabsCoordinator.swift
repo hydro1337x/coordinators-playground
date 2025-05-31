@@ -12,19 +12,23 @@ struct TabsCoordinator: View {
     
     var body: some View {
         TabView(selection: .init(get: { store.tab }, set: { store.handleTabChanged($0) })) {
-            if let tabFeature = store.tabFeatures[.home] {
-                tabFeature
-                    .tag(TabsCoordinatorStore.Tab.home)
+            Group {
+                if let tabFeature = store.tabFeatures[.home] {
+                    tabFeature
+                        .tag(TabsCoordinatorStore.Tab.home)
+                        .tabItem {
+                            Image(systemName: "list.bullet")
+                        }
+                }
+                
+                Text("Second Tab View")
+                    .tag(TabsCoordinatorStore.Tab.second)
                     .tabItem {
-                        Image(systemName: "list.bullet")
+                        Image(systemName: "paperplane")
                     }
             }
-            
-            Text("Second Tab View")
-                .tag(TabsCoordinatorStore.Tab.second)
-                .tabItem {
-                    Image(systemName: "paperplane")
-                }
+            .toolbarBackground(.white, for: .tabBar)
+            .toolbarBackground(.visible, for: .tabBar)
         }
     }
 }

@@ -24,6 +24,42 @@ extension Theme {
             .black
         }
     }
+    
+    var info: Color {
+        switch self {
+        case .light:
+            .blue
+        case .dark:
+            .blue
+        }
+    }
+    
+    var success: Color {
+        switch self {
+        case .light:
+            .green
+        case .dark:
+            .green
+        }
+    }
+    
+    var warning: Color {
+        switch self {
+        case .light:
+            .orange
+        case .dark:
+            .orange
+        }
+    }
+    
+    var failure: Color {
+        switch self {
+        case .light:
+            .red
+        case .dark:
+            .red
+        }
+    }
 }
 
 private struct ThemeKey: EnvironmentKey {

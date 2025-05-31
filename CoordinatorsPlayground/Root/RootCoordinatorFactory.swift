@@ -16,6 +16,7 @@ struct RootCoordinatorFactory {
     let tabsCoordinatorFactory: TabsCoordinatorFactory
     let themeService: UserDefaultsThemeService
     let routerAdapter: RootRouterAdapter
+    let floatingStackStore: FloatingStackStore
     
     func makeAuthCoordinator(onFinished: @escaping () -> Void) -> Feature {
         let store = AuthCoordinatorStore(authStateService: authStateService, authService: authService)

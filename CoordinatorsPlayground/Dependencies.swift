@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 final class RootRouterAdapter {
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
@@ -19,6 +20,7 @@ final class Dependencies {
     lazy var snapshotService = UserDefaultsRestorableSnapshotService()
     lazy var authStateService = AuthStateProvider()
     lazy var authService = AuthService(service: authStateService)
+    lazy var floatingStackStore = FloatingStackStore()
     lazy var accountCoordinatorFactory = AccountCoordinatorFactory()
     lazy var homeCoordinatorFactory = HomeCoordinatorFactory()
     lazy var tabsCoordinatorFactory = TabsCoordinatorFactory(
@@ -32,7 +34,8 @@ final class Dependencies {
         accountCoordinatorFactory: accountCoordinatorFactory,
         tabsCoordinatorFactory: tabsCoordinatorFactory,
         themeService: themeService,
-        routerAdapter: rootRouterAdapter
+        routerAdapter: rootRouterAdapter,
+        floatingStackStore: floatingStackStore
     )
     
     func makeRootCoordinator() -> Feature {
@@ -48,7 +51,12 @@ final class Dependencies {
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
-        let view = RootCoordinator(store: store)
+        let view = RootCoordinator(
+            store: store,
+            makeFloatingStack: { [floatingStackStore] in
+                AnyView(FloatingStack(store: floatingStackStore))
+            }
+        )
         return Feature(view: view, store: store)
     }
     
