@@ -244,6 +244,7 @@ class HomeCoordinatorStore: ObservableObject {
     }
     
     private func push(path: Path) {
+        guard !self.path.contains(path) else { return }
         makeFeature(for: path)
         self.path.append(path)
     }
