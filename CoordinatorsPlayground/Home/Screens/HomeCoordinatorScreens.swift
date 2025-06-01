@@ -20,6 +20,8 @@ struct HomeScreen: View {
                 Text("Push A")
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea(edges: .bottom)
         .background(theme.background)
     }
 }
@@ -41,6 +43,9 @@ struct ScreenA: View {
                 Text("Push B")
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea(edges: .bottom)
+        .background(.red)
     }
 }
 

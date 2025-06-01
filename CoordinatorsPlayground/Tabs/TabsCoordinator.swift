@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TabsCoordinator: View {
     @ObservedObject var store: TabsCoordinatorStore
+    var makeFloatingStack: () -> AnyView
     
     var body: some View {
         TabView(selection: .init(get: { store.tab }, set: { store.handleTabChanged($0) })) {
@@ -21,14 +22,24 @@ struct TabsCoordinator: View {
                         }
                 }
                 
-                Text("Second Tab View")
+                ProfileScreen()
                     .tag(TabsCoordinatorStore.Tab.second)
                     .tabItem {
                         Image(systemName: "paperplane")
                     }
             }
+            .overlay {
+                makeFloatingStack()
+                    .transaction { transaction in
+                        // Explicitly animating change of safeAreaInset with GeometryReader causes wierd flickering
+                        // This is a workaround for .animation(.default) which is deprecated
+                        transaction.animation = .default
+                    }
+            }
+            .toolbar(store.isTabBarVisible ? .visible : .hidden, for: .tabBar)
             .toolbarBackground(.white, for: .tabBar)
             .toolbarBackground(.visible, for: .tabBar)
+            .animation(.default, value: store.isTabBarVisible)
         }
     }
 }
@@ -41,6 +52,7 @@ class TabsCoordinatorStore: ObservableObject {
     }
     
     @Published var tab: Tab
+    @Published var isTabBarVisible: Bool = true
     private(set) var tabFeatures: [Tab: Feature] = [:]
     private var routingHandlers: [(Route) async -> Void] = []
     
@@ -55,7 +67,7 @@ class TabsCoordinatorStore: ObservableObject {
         self.factory = factory
         self.router = router
         self.restorer = restorer
-        self.tab = selectedTab
+        self.tab = .second
         
         Tab.allCases.forEach { makeFeature(for: $0) }
         
@@ -89,6 +101,14 @@ class TabsCoordinatorStore: ObservableObject {
         case .second:
             break
         }
+    }
+    
+    func hideTabBar() {
+        isTabBarVisible = false
+    }
+    
+    func showTabBar() {
+        isTabBarVisible = true
     }
     
     func handleTabChanged(_ tab: Tab) {

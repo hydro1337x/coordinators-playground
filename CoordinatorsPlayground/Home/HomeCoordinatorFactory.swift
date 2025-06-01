@@ -10,9 +10,14 @@ import SwiftUI
 
 @MainActor
 struct HomeCoordinatorFactory {
+    let tabsCoordinatorAdapter: TabsCoordinatorAdapter
+    
     func makeHomeScreen(onButtonTap: @escaping () -> Void) -> Feature {
         let store = HomeScreenStore()
-        store.onButtonTap = onButtonTap
+        store.onButtonTap = {
+            onButtonTap()
+            tabsCoordinatorAdapter.onScreenAPushed()
+        }
         let view = HomeScreen(store: store).navigationTitle(store.title)
         return Feature(view: view, store: store)
     }

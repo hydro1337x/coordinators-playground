@@ -12,21 +12,34 @@ final class RootRouterAdapter {
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
 }
 
+final class TabsCoordinatorAdapter {
+    var onScreenAPushed: () -> Void = unimplemented()
+    var onScreenAPopped: () -> Void = unimplemented()
+    
+    func handlePop(path: [HomeCoordinatorStore.Path]) {
+        if path.contains(.screenA) {
+            onScreenAPopped()
+        }
+    }
+}
+
 @MainActor
 final class Dependencies {
+    lazy var tabsCoordinatorAdapter = TabsCoordinatorAdapter()
     lazy var rootRouterAdapter = RootRouterAdapter()
     lazy var themeService = UserDefaultsThemeService()
     lazy var themeStore = ThemeStore(themeService: themeService)
     lazy var snapshotService = UserDefaultsRestorableSnapshotService()
     lazy var authStateService = AuthStateProvider()
     lazy var authService = AuthService(service: authStateService)
-    lazy var floatingStackStore = FloatingStackStore()
+    lazy var floatingStackStore = FloatingStackStore(clock: ContinuousClock())
     lazy var accountCoordinatorFactory = AccountCoordinatorFactory()
-    lazy var homeCoordinatorFactory = HomeCoordinatorFactory()
+    lazy var homeCoordinatorFactory = HomeCoordinatorFactory(tabsCoordinatorAdapter: tabsCoordinatorAdapter)
     lazy var tabsCoordinatorFactory = TabsCoordinatorFactory(
         authStateService: authStateService,
         homeCoordinatorFactory: homeCoordinatorFactory,
-        routerAdapter: rootRouterAdapter
+        routerAdapter: rootRouterAdapter,
+        tabsCoordinatorAdapter: tabsCoordinatorAdapter
     )
     lazy var rootCoordinatorFactory = RootCoordinatorFactory(
         authStateService: authStateService,
@@ -35,7 +48,8 @@ final class Dependencies {
         tabsCoordinatorFactory: tabsCoordinatorFactory,
         themeService: themeService,
         routerAdapter: rootRouterAdapter,
-        floatingStackStore: floatingStackStore
+        floatingStackStore: floatingStackStore,
+        tabsCoordinatesAdapter: tabsCoordinatorAdapter
     )
     
     func makeRootCoordinator() -> Feature {
@@ -52,10 +66,7 @@ final class Dependencies {
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         let view = RootCoordinator(
-            store: store,
-            makeFloatingStack: { [floatingStackStore] in
-                AnyView(FloatingStack(store: floatingStackStore))
-            }
+            store: store
         )
         return Feature(view: view, store: store)
     }

@@ -12,6 +12,7 @@ struct TabsCoordinatorFactory {
     let authStateService: AuthStateStreamService
     let homeCoordinatorFactory: HomeCoordinatorFactory
     let routerAdapter: RootRouterAdapter
+    let tabsCoordinatorAdapter: TabsCoordinatorAdapter
     
     func makeHomeCoordinator(
         onAccountButtonTapped: @escaping () -> Void,
@@ -28,6 +29,7 @@ struct TabsCoordinatorFactory {
         )
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
+        store.onPopped = tabsCoordinatorAdapter.handlePop
         let view = HomeCoordinator(store: store)
         return Feature(view: view, store: store)
     }

@@ -27,9 +27,7 @@ struct FloatingStack: View {
             }
         }
         .padding(.bottom, 8)
-        .padding(.bottom, store.dynamicPadding)
         .animation(.default, value: store.queue)
-        .animation(.default, value: store.dynamicPadding)
     }
 }
 
@@ -105,6 +103,15 @@ enum FeedbackMessage: Identifiable, Equatable {
             return message.intent
         }
     }
+    
+    var duration: Duration {
+        switch self {
+        case .basic(let message):
+            return message.duration
+        case .action(let message):
+            return message.duration
+        }
+    }
 }
 
 struct BasicFeedbackMessage: Equatable {
@@ -112,6 +119,7 @@ struct BasicFeedbackMessage: Equatable {
     let description: String
     let intent: FeedbackMessageIntent
     let createdAt = Date()
+    let duration = Duration.seconds(4)
 }
 
 struct ActionFeedbackMessage: Equatable {
@@ -120,6 +128,7 @@ struct ActionFeedbackMessage: Equatable {
     let intent: FeedbackMessageIntent
     let createdAt = Date()
     let action: () -> Void
+    let duration = Duration.seconds(6)
     
     static func == (lhs: ActionFeedbackMessage, rhs: ActionFeedbackMessage) -> Bool {
         lhs.id == rhs.id
@@ -129,27 +138,23 @@ struct ActionFeedbackMessage: Equatable {
 @MainActor
 final class FloatingStackStore: ObservableObject {
     @Published private(set) var queue: [FeedbackMessage] = []
-    @Published private(set) var dynamicPadding: Double = 0
     
-    init() {
+    private let clock: any Clock<Duration>
+    
+    init(clock: any Clock<Duration>) {
+        self.clock = clock
+        
         simulateSequence()
     }
     
     func enqueue(message: FeedbackMessage) {
-        var temp = queue
-        temp.append(message)
+        queue.append(message)
+        queue.sort { $0.intent > $1.intent }
         
-        queue = temp.sorted { lhs, rhs in
-            lhs.intent > rhs.intent
+        Task {
+            try await clock.sleep(for: message.duration)
+            queue.removeAll(where: { $0.id == message.id })
         }
-    }
-    
-    func add(padding: Double) {
-        dynamicPadding += padding
-    }
-    
-    func subtract(padding: Double) {
-        dynamicPadding -= padding
     }
     
     func simulateSequence() {
@@ -161,14 +166,13 @@ final class FloatingStackStore: ObservableObject {
         Task {
             try await Task.sleep(for: .seconds(5))
             enqueue(message: .basic(success))
-            try await Task.sleep(for: .seconds(2))
+            try await Task.sleep(for: .seconds(3))
             enqueue(message: .basic(info))
-            try await Task.sleep(for: .seconds(2))
+            try await Task.sleep(for: .seconds(3))
             enqueue(message: .basic(error))
-            try await Task.sleep(for: .seconds(2))
+            try await Task.sleep(for: .seconds(3))
             enqueue(message: .basic(warning))
-            try await Task.sleep(for: .seconds(2))
-            queue.removeAll()
+            try await Task.sleep(for: .seconds(3))
         }
     }
 }

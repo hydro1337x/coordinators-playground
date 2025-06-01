@@ -9,7 +9,6 @@ import SwiftUI
 
 struct RootCoordinator: View {
     @ObservedObject var store: RootCoordinatorStore
-    var makeFloatingStack: () -> AnyView
     
     var body: some View {
         if let tabsCoordinator = store.tabsCoordinator {
@@ -28,7 +27,6 @@ struct RootCoordinator: View {
                         destinationFeature()
                     }
                 }
-                .overlay(content: makeFloatingStack)
         } else {
             Text("Something went wrong")
         }

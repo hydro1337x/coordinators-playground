@@ -113,6 +113,7 @@ class HomeCoordinatorStore: ObservableObject {
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
+    var onPopped: ([Path]) -> Void = unimplemented()
     
     private let authStateService: AuthStateStreamService
     private let factory: HomeCoordinatorFactory
@@ -168,6 +169,7 @@ class HomeCoordinatorStore: ObservableObject {
         if newPath.count < path.count {
             let poppedPath = Array(path.suffix(from: newPath.count))
             poppedPath.forEach { pathFeatures[$0] = nil }
+            onPopped(poppedPath)
         }
         
         path = newPath
