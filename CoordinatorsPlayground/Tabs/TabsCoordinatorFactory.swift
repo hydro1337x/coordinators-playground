@@ -1,5 +1,5 @@
 //
-//  TabsCoordinatorFactory.swift
+//  DefaultTabsCoordinatorFactory.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 25.05.2025..
@@ -8,9 +8,16 @@
 import Foundation
 
 @MainActor
-struct TabsCoordinatorFactory {
+protocol TabsCoordinatorFactory {
+    func makeHomeCoordinator(
+        onAccountButtonTapped: @escaping () -> Void,
+        onLoginButtonTapped: @escaping () -> Void
+    ) -> Feature
+}
+
+struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
     let authStateService: AuthStateStreamService
-    let homeCoordinatorFactory: HomeCoordinatorFactory
+    let homeCoordinatorFactory: DefaultHomeCoordinatorFactory
     let routerAdapter: RootRouterAdapter
     let tabsCoordinatorAdapter: TabsCoordinatorAdapter
     

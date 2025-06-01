@@ -11,7 +11,7 @@ import SwiftUI
 
 @MainActor
 struct AuthCoordinatorFactoryTests {
-    let sut = AccountCoordinatorFactory()
+    let sut = DefaultAccountCoordinatorFactory()
     
     @Test func test_makeAccountDetails() async throws {
         let feature = sut.makeAccountDetails()

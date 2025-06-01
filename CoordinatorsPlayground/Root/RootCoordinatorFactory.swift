@@ -1,5 +1,5 @@
 //
-//  RootCoordinatorFactory.swift
+//  DefaultRootCoordinatorFactory.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 25.05.2025..
@@ -9,11 +9,18 @@ import Foundation
 import SwiftUI
 
 @MainActor
-struct RootCoordinatorFactory {
+protocol RootCoordinatorFactory {
+    func makeAuthCoordinator(onFinished: @escaping () -> Void) -> Feature
+    func makeAccountCoordinator(onFinished: @escaping () -> Void) -> Feature
+    func makeOnboardingCoordinator(onFinished: @escaping () -> Void) -> Feature
+    func makeTabsCoordinator(onAccountButtonTapped: @escaping () -> Void, onLoginButtonTapped: @escaping () -> Void) -> Feature
+}
+
+struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
     let authStateService: AuthStateStreamService
     let authService: AuthTokenLoginService & LogoutService
-    let accountCoordinatorFactory: AccountCoordinatorFactory
-    let tabsCoordinatorFactory: TabsCoordinatorFactory
+    let accountCoordinatorFactory: DefaultAccountCoordinatorFactory
+    let tabsCoordinatorFactory: DefaultTabsCoordinatorFactory
     let themeService: UserDefaultsThemeService
     let routerAdapter: RootRouterAdapter
     let floatingStackStore: FloatingStackStore

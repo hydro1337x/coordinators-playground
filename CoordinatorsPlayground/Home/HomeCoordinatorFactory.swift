@@ -1,5 +1,5 @@
 //
-//  HomeCoordinatorFactory.swift
+//  DefaultHomeCoordinatorFactory.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 23.05.2025..
@@ -9,7 +9,14 @@ import Foundation
 import SwiftUI
 
 @MainActor
-struct HomeCoordinatorFactory {
+protocol HomeCoordinatorFactory {
+    func makeHomeScreen(onButtonTap: @escaping () -> Void) -> Feature
+    func makeScreenA(onButtonTap: @escaping () -> Void) -> Feature
+    func makeScreenB(id: Int, onPushClone: @escaping (Int) -> Void, onPushNext: @escaping () -> Void) -> Feature
+    func makeScreenC(onBackButtonTapped: @escaping () -> Void) -> Feature
+}
+
+struct DefaultHomeCoordinatorFactory: HomeCoordinatorFactory {
     let tabsCoordinatorAdapter: TabsCoordinatorAdapter
     
     func makeHomeScreen(onButtonTap: @escaping () -> Void) -> Feature {

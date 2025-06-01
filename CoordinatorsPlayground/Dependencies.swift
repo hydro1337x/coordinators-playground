@@ -33,15 +33,15 @@ final class Dependencies {
     lazy var authStateService = AuthStateProvider()
     lazy var authService = AuthService(service: authStateService)
     lazy var floatingStackStore = FloatingStackStore(clock: ContinuousClock())
-    lazy var accountCoordinatorFactory = AccountCoordinatorFactory()
-    lazy var homeCoordinatorFactory = HomeCoordinatorFactory(tabsCoordinatorAdapter: tabsCoordinatorAdapter)
-    lazy var tabsCoordinatorFactory = TabsCoordinatorFactory(
+    lazy var accountCoordinatorFactory = DefaultAccountCoordinatorFactory()
+    lazy var homeCoordinatorFactory = DefaultHomeCoordinatorFactory(tabsCoordinatorAdapter: tabsCoordinatorAdapter)
+    lazy var tabsCoordinatorFactory = DefaultTabsCoordinatorFactory(
         authStateService: authStateService,
         homeCoordinatorFactory: homeCoordinatorFactory,
         routerAdapter: rootRouterAdapter,
         tabsCoordinatorAdapter: tabsCoordinatorAdapter
     )
-    lazy var rootCoordinatorFactory = RootCoordinatorFactory(
+    lazy var rootCoordinatorFactory = DefaultRootCoordinatorFactory(
         authStateService: authStateService,
         authService: authService,
         accountCoordinatorFactory: accountCoordinatorFactory,
