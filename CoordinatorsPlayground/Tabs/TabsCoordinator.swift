@@ -51,10 +51,10 @@ class TabsCoordinatorStore: ObservableObject {
         case second
     }
     
-    @Published var tab: Tab
-    @Published var isTabBarVisible: Bool = true
+    @Published private(set) var tab: Tab
+    @Published private(set) var isTabBarVisible: Bool = true
+    
     private(set) var tabFeatures: [Tab: Feature] = [:]
-    private var routingHandlers: [(Route) async -> Void] = []
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
