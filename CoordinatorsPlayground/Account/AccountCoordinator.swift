@@ -15,6 +15,9 @@ struct AccountCoordinator: View {
             VStack {
                 Text("User Bob Account")
                 VStack {
+                    Button("Show Details") {
+                        Task { await store.handleShowDetailsButtonTapped() }
+                    }
                     Text("Theme")
                     HStack {
                         Button("Light") {
@@ -95,6 +98,10 @@ class AccountCoordinatorStore: ObservableObject {
         }
         
         path = newPath
+    }
+    
+    func handleShowDetailsButtonTapped() {
+        push(path: .details)
     }
     
     private func makeFeature(for path: Path) {
