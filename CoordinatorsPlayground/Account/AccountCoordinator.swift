@@ -60,15 +60,10 @@ class AccountCoordinatorStore: ObservableObject, StackNavigationObservable {
         case details
     }
     
-    @Published private(set) var path: [Path] = [] {
-        didSet {
-            onNavigationChanged()
-        }
-    }
+    @Published private(set) var path: [Path] = []
     private(set) var pathFeatures: [Path: Feature] = [:]
     
     var onFinished: () -> Void = unimplemented()
-    var onNavigationChanged: () -> Void = unimplemented()
     
     private let logoutService: LogoutService
     private let themeService: SetThemeService

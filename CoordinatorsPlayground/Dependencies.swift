@@ -23,9 +23,11 @@ final class TabsCoordinatorAdapter {
     }
 }
 
+import Combine
+
 @MainActor
 final class Dependencies {
-    lazy var navigationObserver = NavigationObserver()
+    lazy var navigationObserver = NavigationObserver(scheduler: RunLoop.main.eraseToAnyScheduler())
     lazy var tabsCoordinatorAdapter = TabsCoordinatorAdapter()
     lazy var rootRouterAdapter = RootRouterAdapter()
     lazy var themeService = UserDefaultsThemeService()
@@ -70,6 +72,7 @@ final class Dependencies {
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         navigationObserver.register(root: store)
+        navigationObserver.observe(observable: store, flow: \.$flow, destination: \.$destination)
         let view = RootCoordinator(
             store: store
         )

@@ -77,24 +77,14 @@ class RootCoordinatorStore: ObservableObject, FlowNavigationObservable, ModalNav
         }
     }
     
-    @Published private(set) var flow: Flow {
-        didSet {
-            onNavigationChanged()
-        }
-    }
-    @Published private(set) var destination: Destination? {
-        didSet {
-            onNavigationChanged()
-        }
-    }
+    @Published private(set) var flow: Flow
+    @Published private(set) var destination: Destination?
     
     var sheet: Destination.Sheet? { destination?.sheet }
     var fullscreenCover: Destination.FullscreenCover? { destination?.fullscreenCover }
     
     private(set) var flowFeatures: [Flow: Feature] = [:]
     private(set) var destinationFeature: Feature?
-    
-    var onNavigationChanged: () -> Void = unimplemented()
     
     private let authStateService: AuthStateValueService
     private let authService: AuthTokenLoginService

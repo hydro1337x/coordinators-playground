@@ -51,18 +51,13 @@ class TabsCoordinatorStore: ObservableObject, TabNavigationObservable {
         case second
     }
     
-    @Published private(set) var tab: Tab {
-        didSet {
-            onNavigationChanged()
-        }
-    }
+    @Published private(set) var tab: Tab
     @Published private(set) var isTabBarVisible: Bool = true
     
     private(set) var tabFeatures: [Tab: Feature] = [:]
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
-    var onNavigationChanged: () -> Void = unimplemented()
     
     private let factory: TabsCoordinatorFactory
     let router: any Router<TabsStep>

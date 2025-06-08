@@ -8,9 +8,7 @@
 import Foundation
 
 @MainActor
-protocol NavigationObservable: AnyObject {
-    var onNavigationChanged: () -> Void { get set }
-}
+protocol NavigationObservable: AnyObject {}
 
 protocol ModalNavigationObservable: NavigationObservable {
     associatedtype Destination: Hashable
@@ -95,24 +93,77 @@ struct NavigationState {
 
 typealias NavigationBranch = [NavigationNode]
 
+import Combine
+
 @MainActor
 class NavigationObserver {
     private weak var root: NavigationObservable?
+    private var cancellables: Set<AnyCancellable> = []
+    private let navigationChangedSubject = PassthroughSubject<AnyHashable, Never>()
+    private let scheduler: AnySchedulerOf<RunLoop>
+    
+    init(scheduler: AnySchedulerOf<RunLoop>) {
+        self.scheduler = scheduler
+        
+        navigationChangedSubject
+            .receive(on: scheduler)
+            .removeDuplicates()
+            .map { _ in () }
+            .debounce(for: .milliseconds(0), scheduler: scheduler)
+            .sink { [weak self] in
+                self?.resolveTopVisibleState()
+            }
+            .store(in: &cancellables)
+    }
+    
+    func observe<T>(observable: T, state: KeyPath<T, Published<T.Destination?>.Publisher>) where T: ObservableObject & ModalNavigationObservable {
+        observable[keyPath: state]
+            .sink { [navigationChangedSubject] state in
+                navigationChangedSubject.send(state)
+            }
+            .store(in: &cancellables)
+    }
+    
+    func observe<T>(observable: T, state: KeyPath<T, Published<[T.Path]>.Publisher>) where T: ObservableObject & StackNavigationObservable {
+        observable[keyPath: state]
+            .sink { [navigationChangedSubject] state in
+                navigationChangedSubject.send(state)
+            }
+            .store(in: &cancellables)
+    }
+    
+    func observe<T>(observable: T, state: KeyPath<T, Published<T.Tab>.Publisher>) where T: ObservableObject & TabNavigationObservable {
+        observable[keyPath: state]
+            .sink { [navigationChangedSubject] state in
+                navigationChangedSubject.send(state)
+            }
+            .store(in: &cancellables)
+    }
+    
+    func observe<T>(observable: T, state: KeyPath<T, Published<T.Flow>.Publisher>) where T: ObservableObject & FlowNavigationObservable {
+        observable[keyPath: state]
+            .sink { [navigationChangedSubject] state in
+                navigationChangedSubject.send(state)
+            }
+            .store(in: &cancellables)
+    }
+    
+    func observe<T>(observable: T, flow: KeyPath<T, Published<T.Flow>.Publisher>, destination: KeyPath<T, Published<T.Destination?>.Publisher>) where T: ObservableObject & FlowNavigationObservable & ModalNavigationObservable {
+        observe(observable: observable, state: flow)
+        observe(observable: observable, state: destination)
+    }
+    
+    func observe<T>(observable: T, path: KeyPath<T, Published<[T.Path]>.Publisher>, destination: KeyPath<T, Published<T.Destination?>.Publisher>) where T: ObservableObject & StackNavigationObservable & ModalNavigationObservable {
+        observe(observable: observable, state: path)
+        observe(observable: observable, state: destination)
+    }
     
     func register(root observable: NavigationObservable) {
-        observable.onNavigationChanged = { [weak self] in
-            self?.resolveTopVisibleState()
-        }
-        
         self.root = observable
     }
-    
-    func register(child observable: NavigationObservable) {
-        observable.onNavigationChanged = { [weak self] in
-            self?.resolveTopVisibleState()
-        }
-    }
-    
+}
+
+extension NavigationObserver {
     private func resolveTopVisibleState() {
         guard let root else { return }
         let branches = buildNavigationBranches(from: root)

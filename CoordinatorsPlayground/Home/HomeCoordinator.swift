@@ -103,16 +103,8 @@ class HomeCoordinatorStore: ObservableObject, StackNavigationObservable, ModalNa
         var id: AnyHashable { self }
     }
     
-    @Published private(set) var destination: Destination? {
-        didSet {
-            onNavigationChanged()
-        }
-    }
-    @Published private(set) var path: [Path] = [] {
-        didSet {
-            onNavigationChanged()
-        }
-    }
+    @Published private(set) var destination: Destination?
+    @Published private(set) var path: [Path] = []
     
     @Published private(set) var authState: AuthState?
     
@@ -123,7 +115,6 @@ class HomeCoordinatorStore: ObservableObject, StackNavigationObservable, ModalNa
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
     var onPopped: ([Path]) -> Void = unimplemented()
-    var onNavigationChanged: () -> Void = unimplemented()
     
     private let authStateService: AuthStateStreamService
     private let factory: HomeCoordinatorFactory

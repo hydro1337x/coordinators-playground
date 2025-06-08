@@ -38,7 +38,9 @@ struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
         store.onPopped = tabsCoordinatorAdapter.handlePop
-        navigationObserver.register(child: store)
+        
+        navigationObserver.observe(observable: store, path: \.$path, destination: \.$destination)
+        
         let view = HomeCoordinator(store: store)
         return Feature(view: view, store: store)
     }
