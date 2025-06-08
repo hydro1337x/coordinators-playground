@@ -72,7 +72,7 @@ extension FlowNavigationObservable {
     }
 }
 
-enum PresentationType: String {
+enum NavigationContext: String {
     case root
     case tab
     case stack
@@ -80,32 +80,46 @@ enum PresentationType: String {
     case flow
 }
 
-struct NavigationGraphNode {
-    let coordinator: NavigationObservable
-    let presentation: PresentationType
+struct NavigationNode {
+    let observable: NavigationObservable
+    let context: NavigationContext
     let elevation: Int
 }
 
 struct NavigationState {
     let state: AnyHashable
-    let coordinator: NavigationObservable
+    let observable: NavigationObservable
     let elevation: Int
     let depth: Int
 }
 
-typealias NavigationGraphBranch = [NavigationGraphNode]
+typealias NavigationBranch = [NavigationNode]
 
 @MainActor
 class NavigationObserver {
     private weak var root: NavigationObservable?
     
-    func calculateTop() {
-        guard let root else { return }
-        let branches = calculateGraphBranches(from: root)
-        let topMostStates = branches.compactMap {
-            findTopmostState(in: $0)
+    func register(root observable: NavigationObservable) {
+        observable.onNavigationChanged = { [weak self] in
+            self?.resolveTopVisibleState()
         }
-        let topMost = topMostStates.sorted(by: { lhs, rhs in
+        
+        self.root = observable
+    }
+    
+    func register(child observable: NavigationObservable) {
+        observable.onNavigationChanged = { [weak self] in
+            self?.resolveTopVisibleState()
+        }
+    }
+    
+    private func resolveTopVisibleState() {
+        guard let root else { return }
+        let branches = buildNavigationBranches(from: root)
+        let topVisibleStates = branches.compactMap {
+            resolveTopVisibleState(in: $0)
+        }
+        let topVisibleState = topVisibleStates.sorted(by: { lhs, rhs in
             if lhs.elevation > rhs.elevation {
                 return true
             } else if lhs.elevation == rhs.elevation {
@@ -115,82 +129,82 @@ class NavigationObserver {
             }
         }).first
         
-        if let topMost {
-            print("📍 Topmost: \(topMost.state) in \(type(of: topMost.coordinator))")
+        if let topVisibleState {
+            print("📍 Topmost: \(topVisibleState.state) in \(type(of: topVisibleState.observable))")
         } else {
             print("⚠️ No topmost state found")
         }
     }
     
-    func findTopmostState(in branch: [NavigationGraphNode]) -> NavigationState? {
+    private func resolveTopVisibleState(in branch: NavigationBranch) -> NavigationState? {
         var highestElevation = -1
-        var topMostState: NavigationState?
+        var topVisibleState: NavigationState?
 
         for (index, node) in branch.enumerated() {
             let elevation = node.elevation
-            let coordinator = node.coordinator
+            let observable = node.observable
 
-            if let modal = coordinator as? (any ModalNavigationObservable), let destination = modal.destination, elevation >= highestElevation {
+            if let modalObservable = observable as? (any ModalNavigationObservable), let destination = modalObservable.destination, elevation >= highestElevation {
                 highestElevation = elevation + 1
-                topMostState = NavigationState(state: AnyHashable(destination), coordinator: coordinator, elevation: highestElevation, depth: index)
+                topVisibleState = NavigationState(state: AnyHashable(destination), observable: observable, elevation: highestElevation, depth: index)
             }
 
-            if let stack = coordinator as? (any StackNavigationObservable), let last = stack.path.last, elevation >= highestElevation {
+            if let stackObservable = observable as? (any StackNavigationObservable), let last = stackObservable.path.last, elevation >= highestElevation {
                 highestElevation = elevation
-                topMostState = NavigationState(state: AnyHashable(last), coordinator: coordinator, elevation: highestElevation, depth: index)
+                topVisibleState = NavigationState(state: AnyHashable(last), observable: observable, elevation: highestElevation, depth: index)
             }
 
-            if let tab = coordinator as? (any TabNavigationObservable), elevation >= highestElevation {
+            if let tabObservable = observable as? (any TabNavigationObservable), elevation >= highestElevation {
                 highestElevation = elevation
-                topMostState = NavigationState(state: AnyHashable(tab.tab), coordinator: coordinator, elevation: highestElevation, depth: index)
+                topVisibleState = NavigationState(state: AnyHashable(tabObservable.tab), observable: observable, elevation: highestElevation, depth: index)
             }
 
-            if let flow = coordinator as? (any FlowNavigationObservable), elevation >= highestElevation {
+            if let flowObservable = observable as? (any FlowNavigationObservable), elevation >= highestElevation {
                 highestElevation = elevation
-                topMostState = NavigationState(state: AnyHashable(flow.flow), coordinator: coordinator, elevation: highestElevation, depth: index)
+                topVisibleState = NavigationState(state: AnyHashable(flowObservable.flow), observable: observable, elevation: highestElevation, depth: index)
             }
         }
 
-        return topMostState
+        return topVisibleState
     }
     
-    func calculateGraphBranches(
-        from coordinator: NavigationObservable,
-        presentation: PresentationType = .root,
+    private func buildNavigationBranches(
+        from observable: NavigationObservable,
+        context: NavigationContext = .root,
         currentElevation: Int = 0
-    ) -> [[NavigationGraphNode]] {
+    ) -> [NavigationBranch] {
         // Determine this level's elevation
-        let elevation = (presentation == .modal) ? currentElevation + 1 : currentElevation
+        let elevation = (context == .modal) ? currentElevation + 1 : currentElevation
 
         // Start node
-        let node = NavigationGraphNode(
-            coordinator: coordinator,
-            presentation: presentation,
+        let node = NavigationNode(
+            observable: observable,
+            context: context,
             elevation: elevation
         )
 
         // Recursively get all children branches
-        var childBranches: [[NavigationGraphNode]] = []
+        var childBranches: [NavigationBranch] = []
 
-        if let modal = coordinator as? (any ModalNavigationObservable),
-           let destination = modal.destinationFeature?.cast(to: NavigationObservable.self) {
-            let nested = calculateGraphBranches(from: destination, presentation: .modal, currentElevation: elevation)
-            childBranches.append(contentsOf: nested)
+        if let modalObservable = observable as? (any ModalNavigationObservable),
+           let destination = modalObservable.destinationFeature?.cast(to: NavigationObservable.self) {
+            let childBranch = buildNavigationBranches(from: destination, context: .modal, currentElevation: elevation)
+            childBranches.append(contentsOf: childBranch)
         }
 
-        if let stack = coordinator as? (any StackNavigationObservable), let last = stack.path.last, let destination = stack.erasedPathFeatures[AnyHashable(last)]?.cast(to: NavigationObservable.self) {
-            let nested = calculateGraphBranches(from: destination, presentation: .stack, currentElevation: elevation)
-            childBranches.append(contentsOf: nested)
+        if let stackObservable = observable as? (any StackNavigationObservable), let last = stackObservable.path.last, let destination = stackObservable.erasedPathFeatures[AnyHashable(last)]?.cast(to: NavigationObservable.self) {
+            let childBranch = buildNavigationBranches(from: destination, context: .stack, currentElevation: elevation)
+            childBranches.append(contentsOf: childBranch)
         }
 
-        if let tab = coordinator as? (any TabNavigationObservable), let destination = tab.erasedTabFeatures[AnyHashable(tab.tab)]?.cast(to: NavigationObservable.self) {
-            let nested = calculateGraphBranches(from: destination, presentation: .tab, currentElevation: elevation)
-            childBranches.append(contentsOf: nested)
+        if let tabObservable = observable as? (any TabNavigationObservable), let destination = tabObservable.erasedTabFeatures[AnyHashable(tabObservable.tab)]?.cast(to: NavigationObservable.self) {
+            let childBranch = buildNavigationBranches(from: destination, context: .tab, currentElevation: elevation)
+            childBranches.append(contentsOf: childBranch)
         }
 
-        if let flow = coordinator as? (any FlowNavigationObservable), let destination = flow.erasedFlowFeatures[AnyHashable(flow.flow)]?.cast(to: NavigationObservable.self) {
-            let nested = calculateGraphBranches(from: destination, presentation: .flow, currentElevation: elevation)
-            childBranches.append(contentsOf: nested)
+        if let flowObservable = observable as? (any FlowNavigationObservable), let destination = flowObservable.erasedFlowFeatures[AnyHashable(flowObservable.flow)]?.cast(to: NavigationObservable.self) {
+            let childBranch = buildNavigationBranches(from: destination, context: .flow, currentElevation: elevation)
+            childBranches.append(contentsOf: childBranch)
         }
 
         // If no children, return a leaf branch
@@ -200,19 +214,5 @@ class NavigationObserver {
 
         // Attach current node to each child branch
         return childBranches.map { [node] + $0 }
-    }
-    
-    func register(root observable: NavigationObservable) {
-        observable.onNavigationChanged = { [weak self] in
-            self?.calculateTop()
-        }
-        
-        self.root = observable
-    }
-    
-    func register(child observable: NavigationObservable) {
-        observable.onNavigationChanged = { [weak self] in
-            self?.calculateTop()
-        }
     }
 }
