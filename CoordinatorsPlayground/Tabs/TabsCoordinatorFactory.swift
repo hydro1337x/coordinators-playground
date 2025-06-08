@@ -20,6 +20,7 @@ struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
     let homeCoordinatorFactory: DefaultHomeCoordinatorFactory
     let routerAdapter: RootRouterAdapter
     let tabsCoordinatorAdapter: TabsCoordinatorAdapter
+    let navigationObserver: NavigationObserver
     
     func makeHomeCoordinator(
         onAccountButtonTapped: @escaping () -> Void,
@@ -37,6 +38,7 @@ struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
         store.onPopped = tabsCoordinatorAdapter.handlePop
+        navigationObserver.register(child: store)
         let view = HomeCoordinator(store: store)
         return Feature(view: view, store: store)
     }

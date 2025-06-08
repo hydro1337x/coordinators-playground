@@ -25,6 +25,7 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
     let routerAdapter: RootRouterAdapter
     let floatingStackStore: FloatingStackStore
     let tabsCoordinatesAdapter: TabsCoordinatorAdapter
+    let navigationObserver: NavigationObserver
     
     func makeAuthCoordinator(onFinished: @escaping () -> Void) -> Feature {
         let store = AuthCoordinatorStore(authStateService: authStateService, authService: authService)
@@ -45,6 +46,7 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         store.onFinished = onFinished
+        navigationObserver.register(child: store)
         let view = AccountCoordinator(store: store)
         return Feature(view: view, store: store)
     }
@@ -70,6 +72,7 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
         tabsCoordinatesAdapter.onScreenAPopped = store.showTabBar
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
+        navigationObserver.register(child: store)
         let view = TabsCoordinator(
             store: store,
             makeFloatingStack: { [floatingStackStore] in

@@ -55,15 +55,20 @@ struct AccountCoordinator: View {
 }
 
 @MainActor
-class AccountCoordinatorStore: ObservableObject {
+class AccountCoordinatorStore: ObservableObject, StackNavigationObservable {
     enum Path: Codable {
         case details
     }
     
-    @Published private(set) var path: [Path] = []
+    @Published private(set) var path: [Path] = [] {
+        didSet {
+            onNavigationChanged()
+        }
+    }
     private(set) var pathFeatures: [Path: Feature] = [:]
     
     var onFinished: () -> Void = unimplemented()
+    var onNavigationChanged: () -> Void = unimplemented()
     
     private let logoutService: LogoutService
     private let themeService: SetThemeService

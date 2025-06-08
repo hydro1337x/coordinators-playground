@@ -11,7 +11,7 @@ struct RootCoordinator: View {
     @ObservedObject var store: RootCoordinatorStore
     
     var body: some View {
-        if let tabsCoordinator = store.tabsCoordinator {
+        if let tabsCoordinator = store.flowFeatures[.tabs] {
             tabsCoordinator
                 .sheet(item: .init(get: { store.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
                     switch sheet {
@@ -43,7 +43,11 @@ struct RootCoordinator: View {
 }
 
 @MainActor
-class RootCoordinatorStore: ObservableObject {
+class RootCoordinatorStore: ObservableObject, FlowNavigationObservable, ModalNavigationObservable {
+    enum Flow: Hashable, Codable {
+        case tabs
+    }
+    
     enum Destination: Identifiable, Hashable, Codable {
         enum Sheet: Identifiable, Codable {
             case auth
@@ -73,13 +77,24 @@ class RootCoordinatorStore: ObservableObject {
         }
     }
     
-    @Published private var destination: Destination?
+    @Published private(set) var flow: Flow {
+        didSet {
+            onNavigationChanged()
+        }
+    }
+    @Published private(set) var destination: Destination? {
+        didSet {
+            onNavigationChanged()
+        }
+    }
     
     var sheet: Destination.Sheet? { destination?.sheet }
     var fullscreenCover: Destination.FullscreenCover? { destination?.fullscreenCover }
     
-    private(set) var tabsCoordinator: Feature?
+    private(set) var flowFeatures: [Flow: Feature] = [:]
     private(set) var destinationFeature: Feature?
+    
+    var onNavigationChanged: () -> Void = unimplemented()
     
     private let authStateService: AuthStateValueService
     private let authService: AuthTokenLoginService
@@ -87,12 +102,13 @@ class RootCoordinatorStore: ObservableObject {
     let router: any Router<RootStep>
     let restorer: any Restorer<RootState>
     
-    init(authStateService: AuthStateProvider, authService: AuthTokenLoginService, factory: RootCoordinatorFactory, router: any Router<RootStep>, restorer: any Restorer<RootState>) {
+    init(flow: Flow, authStateService: AuthStateProvider, authService: AuthTokenLoginService, factory: RootCoordinatorFactory, router: any Router<RootStep>, restorer: any Restorer<RootState>) {
         self.authStateService = authStateService
         self.authService = authService
         self.factory = factory
         self.router = router
         self.restorer = restorer
+        self.flow = flow
         let tabsCoordinator = factory.makeTabsCoordinator(
             onAccountButtonTapped: { [weak self] in
                 self?.present(destination: .sheet(.account))
@@ -101,17 +117,18 @@ class RootCoordinatorStore: ObservableObject {
                 self?.present(destination: .sheet(.auth))
             }
         )
-        self.tabsCoordinator = tabsCoordinator
+        
+        flowFeatures[flow] = tabsCoordinator
         
         router.setup(using: self, childRoutables: { [weak self] in
             guard let self else { return [] }
-            return [self.tabsCoordinator, self.destinationFeature]
+            return [tabsCoordinator, self.destinationFeature]
                 .compactMap { $0?.cast() }
         })
         
         restorer.setup(using: self, childRestorables: { [weak self] in
             guard let self else { return [] }
-            return [self.destinationFeature, self.tabsCoordinator]
+            return [tabsCoordinator, self.destinationFeature]
                 .compactMap { $0?.cast() }
         })
     }

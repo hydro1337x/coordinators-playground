@@ -1,38 +1,38 @@
 //
-//  Dependencies.swift
-//  CoordinatorsPlayground
+//  FactoryMocks.swift
+//  CoordinatorsPlaygroundTests
 //
-//  Created by Benjamin Macanovic on 28.05.2025..
+//  Created by Benjamin Macanovic on 07.06.2025..
 //
 
 import Foundation
 import SwiftUI
+@testable import CoordinatorsPlayground
 
-final class RootRouterAdapter {
-    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
-}
-
-final class TabsCoordinatorAdapter {
-    var onScreenAPushed: () -> Void = unimplemented()
-    var onScreenAPopped: () -> Void = unimplemented()
+struct AuthStateServiceMock: AuthTokenLoginService, LogoutService {
+    let service: SetAuthStateService
     
-    func handlePop(path: [HomeCoordinatorStore.Path]) {
-        if path.contains(.screenA) {
-            onScreenAPopped()
-        }
+    func login(authToken: String?) async throws {
+        guard authToken != nil else { throw URLError(.badServerResponse) }
+        
+        await service.setState(.loginInProgress)
+        await service.setState(.loggedIn)
+    }
+    
+    func logout() async {
+        await service.setState(.loggedOut)
     }
 }
 
 @MainActor
 final class Dependencies {
-    lazy var navigationObserver = NavigationObserver()
     lazy var tabsCoordinatorAdapter = TabsCoordinatorAdapter()
     lazy var rootRouterAdapter = RootRouterAdapter()
     lazy var themeService = UserDefaultsThemeService()
     lazy var themeStore = ThemeStore(themeService: themeService)
     lazy var snapshotService = UserDefaultsRestorableSnapshotService()
     lazy var authStateService = AuthStateProvider()
-    lazy var authService = AuthService(service: authStateService)
+    lazy var authService = AuthStateServiceMock(service: authStateService)
     lazy var floatingStackStore = FloatingStackStore(clock: ContinuousClock())
     lazy var accountCoordinatorFactory = DefaultAccountCoordinatorFactory()
     lazy var homeCoordinatorFactory = DefaultHomeCoordinatorFactory(tabsCoordinatorAdapter: tabsCoordinatorAdapter)
@@ -40,8 +40,7 @@ final class Dependencies {
         authStateService: authStateService,
         homeCoordinatorFactory: homeCoordinatorFactory,
         routerAdapter: rootRouterAdapter,
-        tabsCoordinatorAdapter: tabsCoordinatorAdapter,
-        navigationObserver: navigationObserver
+        tabsCoordinatorAdapter: tabsCoordinatorAdapter
     )
     lazy var rootCoordinatorFactory = DefaultRootCoordinatorFactory(
         authStateService: authStateService,
@@ -51,8 +50,7 @@ final class Dependencies {
         themeService: themeService,
         routerAdapter: rootRouterAdapter,
         floatingStackStore: floatingStackStore,
-        tabsCoordinatesAdapter: tabsCoordinatorAdapter,
-        navigationObserver: navigationObserver
+        tabsCoordinatesAdapter: tabsCoordinatorAdapter
     )
     
     func makeRootCoordinator() -> Feature {
@@ -69,7 +67,6 @@ final class Dependencies {
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
-        navigationObserver.register(root: store)
         let view = RootCoordinator(
             store: store
         )
