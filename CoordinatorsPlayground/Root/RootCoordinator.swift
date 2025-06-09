@@ -13,7 +13,10 @@ struct RootCoordinator: View {
     var body: some View {
         if let tabsCoordinator = store.flowFeatures[.tabs] {
             tabsCoordinator
-                .sheet(item: .init(get: { store.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
+                .sheet(item: .binding(
+                    state: { store.destination?.sheet },
+                    with: store.handleSheetChanged)
+                ) { sheet in
                     switch sheet {
                     case .auth:
                         makeDestinationFeature()
@@ -21,7 +24,10 @@ struct RootCoordinator: View {
                         makeDestinationFeature()
                     }
                 }
-                .fullScreenCover(item: .init(get: { store.fullscreenCover }, set: { store.handleFullscreenCoverChanged($0) })) { destination in
+                .fullScreenCover(item: .binding(
+                    state: { store.destination?.fullscreenCover },
+                    with: store.handleFullscreenCoverChanged)
+                ) { destination in
                     switch destination {
                     case .onboarding:
                         makeDestinationFeature()
@@ -79,9 +85,6 @@ class RootCoordinatorStore: ObservableObject, FlowNavigationObservable, ModalNav
     
     @Published private(set) var flow: Flow
     @Published private(set) var destination: Destination?
-    
-    var sheet: Destination.Sheet? { destination?.sheet }
-    var fullscreenCover: Destination.FullscreenCover? { destination?.fullscreenCover }
     
     private(set) var flowFeatures: [Flow: Feature] = [:]
     private(set) var destinationFeature: Feature?

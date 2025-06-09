@@ -20,33 +20,33 @@ struct DefaultHomeCoordinatorFactory: HomeCoordinatorFactory {
     let tabsCoordinatorAdapter: TabsCoordinatorAdapter
     
     func makeHomeScreen(onButtonTap: @escaping () -> Void) -> Feature {
-        let store = HomeScreenStore()
+        let store = HomeRootStore()
         store.onButtonTap = {
             onButtonTap()
             tabsCoordinatorAdapter.onScreenAPushed()
         }
-        let view = HomeScreen(store: store).navigationTitle(store.title)
+        let view = HomeRootScreen(store: store).navigationTitle(store.title)
         return Feature(view: view, store: store)
     }
     func makeScreenA(onButtonTap: @escaping () -> Void) -> Feature {
-        let store = StoreA()
+        let store = HomeStoreA()
         store.onButtonTap = onButtonTap
-        let view = ScreenA(store: store).navigationTitle(store.title)
+        let view = HomeScreenA(store: store).navigationTitle(store.title)
         return Feature(view: view, store: store)
     }
     
     func makeScreenB(id: Int, onPushClone: @escaping (Int) -> Void, onPushNext: @escaping () -> Void) -> Feature {
-        let store = StoreB(id: id)
+        let store = HomeStoreB(id: id)
         store.onPushClone = onPushClone
         store.onPushNext = onPushNext
-        let view = ScreenB(store: store).navigationTitle(store.title)
+        let view = HomeScreenB(store: store).navigationTitle(store.title)
         return Feature(view: view, store: store)
     }
     
     func makeScreenC(onBackButtonTapped: @escaping () -> Void) -> Feature {
-        let store = StoreC()
+        let store = HomeStoreC()
         store.onBack = onBackButtonTapped
-        let view = ScreenC(store: store).navigationTitle(store.title)
+        let view = HomeScreenC(store: store).navigationTitle(store.title)
         return Feature(view: view, store: store)
     }
 }

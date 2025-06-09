@@ -18,7 +18,7 @@ struct NavigationTests {
         let tabsStore = rootStore.tabsCoordinator!.cast(to: TabsCoordinatorStore.self)!
         tabsStore.handleTabChanged(.home)
         let homeStore = tabsStore.tabFeatures[tabsStore.tab]!.cast(to: HomeCoordinatorStore.self)!
-        let rootFeatureStore = homeStore.rootFeature!.cast(to: HomeScreenStore.self)!
+        let rootFeatureStore = homeStore.rootFeature!.cast(to: HomeRootStore.self)!
         rootFeatureStore.onButtonTap()
         homeStore.handleAccountButtonTapped()
         let accountStore = rootStore.destinationFeature!.cast(to: AccountCoordinatorStore.self)!

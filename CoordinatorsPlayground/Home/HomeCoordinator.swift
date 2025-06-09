@@ -26,7 +26,10 @@ struct HomeCoordinator: View {
                 .toolbar(content: toolbarButton)
         }
         .sheet(
-            item: .init(get: { store.destination }, set: { store.handleDestinationChanged($0) }),
+            item: .binding(
+                state: { store.destination },
+                with: store.handleDestinationChanged
+            ),
             content: { destination in
                 switch destination {
                 case .screenB:

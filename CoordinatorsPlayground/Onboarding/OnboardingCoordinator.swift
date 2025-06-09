@@ -11,7 +11,7 @@ struct OnboardingCoordinator: View {
     @ObservedObject var store: OnboardingCoordinatorStore
     
     var body: some View {
-        TabView(selection: .init(get: { store.tab }, set: { store.handleTabChanged($0) })) {
+        TabView(selection: .binding(state: { store.tab }, with: store.handleTabChanged)) {
             OnboardingScreenA()
                 .tag(OnboardingCoordinatorStore.Tab.screenA)
 

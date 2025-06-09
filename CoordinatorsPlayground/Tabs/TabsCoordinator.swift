@@ -12,7 +12,10 @@ struct TabsCoordinator: View {
     var makeFloatingStack: () -> AnyView
     
     var body: some View {
-        TabView(selection: .init(get: { store.tab }, set: { store.handleTabChanged($0) })) {
+        TabView(selection: .binding(
+            state: { store.tab },
+            with: store.handleTabChanged)
+        ) {
             Group {
                 if let tabFeature = store.tabFeatures[.home] {
                     tabFeature

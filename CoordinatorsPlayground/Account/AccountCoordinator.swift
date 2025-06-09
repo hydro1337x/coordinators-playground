@@ -11,7 +11,7 @@ struct AccountCoordinator: View {
     @ObservedObject var store: AccountCoordinatorStore
     
     var body: some View {
-        NavigationStack(path: .init(get: { store.path }, set: { store.handlePathChanged($0) })) {
+        NavigationStack(path: .binding(state: { store.path }, with: store.handlePathChanged)) {
             VStack {
                 Text("User Bob Account")
                 VStack {
@@ -45,7 +45,11 @@ struct AccountCoordinator: View {
             }
             .navigationTitle("Account")
         }
-        .sheet(item: .init(get: { store.destination?.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
+        .sheet(item: .binding(
+                    state: { store.destination?.sheet },
+                    with: store.handleSheetChanged
+                )
+        ) { sheet in
             switch sheet {
             case .help:
                 makeDestinatonFeature()
