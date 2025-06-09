@@ -11,10 +11,12 @@ struct OnboardingCoordinator: View {
     @ObservedObject var store: OnboardingCoordinatorStore
     
     var body: some View {
-        TabView {
-            OnboardingScreen1()
+        TabView(selection: .init(get: { store.tab }, set: { store.handleTabChanged($0) })) {
+            OnboardingScreenA()
+                .tag(OnboardingCoordinatorStore.Tab.screenA)
 
-            OnboardingScreen2()
+            OnboardingScreenB()
+                .tag(OnboardingCoordinatorStore.Tab.screenB)
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
         .overlay {
@@ -32,8 +34,21 @@ struct OnboardingCoordinator: View {
 }
 
 @MainActor
-class OnboardingCoordinatorStore: ObservableObject {
+class OnboardingCoordinatorStore: ObservableObject, TabNavigationObservable {
+    enum Tab: Hashable {
+        case screenA
+        case screenB
+    }
+    
+    @Published private(set) var tab: Tab = .screenA
+    
+    private(set) var tabFeatures: [Tab : Feature] = [:]
+    
     var onFinished: () -> Void = unimplemented()
+    
+    func handleTabChanged(_ tab: Tab) {
+        self.tab = tab
+    }
     
     func handleSkipButtonTapped() {
         onFinished()

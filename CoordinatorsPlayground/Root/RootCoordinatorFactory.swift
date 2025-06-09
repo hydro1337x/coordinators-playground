@@ -46,7 +46,7 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         store.onFinished = onFinished
-        navigationObserver.observe(observable: store, state: \.$path)
+        navigationObserver.observe(observable: store, path: \.$path, destination: \.$destination)
         let view = AccountCoordinator(store: store)
         return Feature(view: view, store: store)
     }
@@ -54,6 +54,7 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
     func makeOnboardingCoordinator(onFinished: @escaping () -> Void) -> Feature {
         let store = OnboardingCoordinatorStore()
         store.onFinished = onFinished
+        navigationObserver.observe(observable: store, state: \.$tab)
         let view = OnboardingCoordinator(store: store)
         return Feature(view: view, store: store)
     }

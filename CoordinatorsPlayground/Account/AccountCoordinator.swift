@@ -15,8 +15,11 @@ struct AccountCoordinator: View {
             VStack {
                 Text("User Bob Account")
                 VStack {
-                    Button("Show Details") {
-                        Task { await store.handleShowDetailsButtonTapped() }
+                    Button("Push Details") {
+                        store.handleShowDetailsButtonTapped()
+                    }
+                    Button("Present Help") {
+                        store.handlePresentHelpButtonTapped()
                     }
                     Text("Theme")
                     HStack {
@@ -42,6 +45,21 @@ struct AccountCoordinator: View {
             }
             .navigationTitle("Account")
         }
+        .sheet(item: .init(get: { store.destination?.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
+            switch sheet {
+            case .help:
+                makeDestinatonFeature()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    func makeDestinatonFeature() -> some View {
+        if let view = store.destinationFeature {
+            view
+        } else {
+            Text("Something went wrong")
+        }
     }
     
     @ViewBuilder
@@ -55,12 +73,32 @@ struct AccountCoordinator: View {
 }
 
 @MainActor
-class AccountCoordinatorStore: ObservableObject, StackNavigationObservable {
-    enum Path: Codable {
+class AccountCoordinatorStore: ObservableObject, StackNavigationObservable, ModalNavigationObservable {
+    enum Destination: Identifiable, Hashable, Codable {
+        enum Sheet: Identifiable, Hashable, Codable {
+            case help
+            
+            var id: AnyHashable { self }
+        }
+        
+        case sheet(Sheet)
+        
+        var id: AnyHashable { self }
+        
+        var sheet: Sheet? {
+            guard case .sheet(let sheet) = self else { return nil }
+            return sheet
+        }
+    }
+    
+    enum Path: Hashable, Codable {
         case details
     }
     
+    @Published private(set) var destination: Destination?
     @Published private(set) var path: [Path] = []
+    
+    private(set) var destinationFeature: Feature?
     private(set) var pathFeatures: [Path: Feature] = [:]
     
     var onFinished: () -> Void = unimplemented()
@@ -91,6 +129,15 @@ class AccountCoordinatorStore: ObservableObject, StackNavigationObservable {
         print("Deinited: \(String(describing: self))")
     }
     
+    func handleSheetChanged(_ sheet: Destination.Sheet?) {
+        if let sheet {
+            destination = .sheet(sheet)
+        } else {
+            destinationFeature = nil
+            destination = nil
+        }
+    }
+    
     func handlePathChanged(_ newPath: [Path]) {
         if newPath.count < path.count {
             let poppedPath = Array(path.suffix(from: newPath.count))
@@ -102,6 +149,23 @@ class AccountCoordinatorStore: ObservableObject, StackNavigationObservable {
     
     func handleShowDetailsButtonTapped() {
         push(path: .details)
+    }
+    
+    func handlePresentHelpButtonTapped() {
+        present(destination: .sheet(.help))
+    }
+    
+    private func makeFeature(for destination: Destination) {
+        switch destination {
+        case .sheet(let sheet):
+            switch sheet {
+            case .help:
+                let feature = factory.makeAccountHelp(onDismiss: { [weak self] in
+                    self?.dismiss()
+                })
+                destinationFeature = feature
+            }
+        }
     }
     
     private func makeFeature(for path: Path) {
@@ -131,6 +195,17 @@ class AccountCoordinatorStore: ObservableObject, StackNavigationObservable {
         makeFeature(for: path)
         self.path.append(path)
     }
+    
+    private func present(destination: Destination) {
+        destinationFeature = nil
+        makeFeature(for: destination)
+        self.destination = destination
+    }
+    
+    private func dismiss() {
+        destinationFeature = nil
+        self.destination = nil
+    }
 }
 
 extension AccountCoordinatorStore: Routable {
@@ -141,13 +216,18 @@ extension AccountCoordinatorStore: Routable {
             case .accountDetails:
                 push(path: .details)
             }
+        case .present(destination: let destination):
+            switch destination {
+            case .help:
+                present(destination: .sheet(.help))
+            }
         }
     }
 }
 
 extension AccountCoordinatorStore: Restorable {
     func captureState() async -> AccountState {
-        return .init(path: path)
+        return .init(path: path, destination: destination)
     }
     
     func restore(state: AccountState) async {
@@ -158,12 +238,18 @@ extension AccountCoordinatorStore: Restorable {
 
 struct AccountState: Codable {
     let path: [AccountCoordinatorStore.Path]
+    let destination: AccountCoordinatorStore.Destination?
 }
 
 enum AccountStep: Decodable {
+    enum Destination: Decodable {
+        case help
+    }
+    
     enum Path: Decodable {
         case accountDetails
     }
 
+    case present(destination: Destination)
     case push(path: Path)
 }

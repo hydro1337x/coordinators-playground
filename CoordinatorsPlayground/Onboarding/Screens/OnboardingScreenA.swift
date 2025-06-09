@@ -1,5 +1,5 @@
 //
-//  OnboardingScreen1.swift
+//  OnboardingScreenA.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 14.05.2025..
@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-struct OnboardingScreen1: View {
+struct OnboardingScreenA: View {
     var body: some View {
         Text("Onboarding Screen 1")
     }
 }
 
 #Preview {
-    OnboardingScreen1()
+    OnboardingScreenA()
 }

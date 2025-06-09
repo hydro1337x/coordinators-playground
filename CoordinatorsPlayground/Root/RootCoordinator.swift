@@ -16,15 +16,15 @@ struct RootCoordinator: View {
                 .sheet(item: .init(get: { store.sheet }, set: { store.handleSheetChanged($0) })) { sheet in
                     switch sheet {
                     case .auth:
-                        destinationFeature()
+                        makeDestinationFeature()
                     case .account:
-                        destinationFeature()
+                        makeDestinationFeature()
                     }
                 }
                 .fullScreenCover(item: .init(get: { store.fullscreenCover }, set: { store.handleFullscreenCoverChanged($0) })) { destination in
                     switch destination {
                     case .onboarding:
-                        destinationFeature()
+                        makeDestinationFeature()
                     }
                 }
         } else {
@@ -33,7 +33,7 @@ struct RootCoordinator: View {
     }
     
     @ViewBuilder
-    func destinationFeature() -> some View {
+    func makeDestinationFeature() -> some View {
         if let view = store.destinationFeature {
             view
         } else {
@@ -92,33 +92,47 @@ class RootCoordinatorStore: ObservableObject, FlowNavigationObservable, ModalNav
     let router: any Router<RootStep>
     let restorer: any Restorer<RootState>
     
-    init(flow: Flow, authStateService: AuthStateProvider, authService: AuthTokenLoginService, factory: RootCoordinatorFactory, router: any Router<RootStep>, restorer: any Restorer<RootState>) {
+    init(
+        flow: Flow,
+        destination: Destination = .fullscreenCover(.onboarding),
+        authStateService: AuthStateProvider,
+        authService: AuthTokenLoginService,
+        factory: RootCoordinatorFactory, router: any Router<RootStep>,
+        restorer: any Restorer<RootState>
+    ) {
         self.authStateService = authStateService
         self.authService = authService
         self.factory = factory
         self.router = router
         self.restorer = restorer
         self.flow = flow
-        let tabsCoordinator = factory.makeTabsCoordinator(
-            onAccountButtonTapped: { [weak self] in
-                self?.present(destination: .sheet(.account))
-            },
-            onLoginButtonTapped: { [weak self] in
-                self?.present(destination: .sheet(.auth))
-            }
-        )
+        self.destination = destination
         
-        flowFeatures[flow] = tabsCoordinator
+        makeFeature(for: destination)
+        makeFeature(for: flow)
+        
+        // MARK: - abstract with makeFeature(for flow:)
+        
         
         router.setup(using: self, childRoutables: { [weak self] in
             guard let self else { return [] }
-            return [tabsCoordinator, self.destinationFeature]
+            return flowFeatures
+                .values
+                .map { $0 }
+                .reduce(into: [destinationFeature]) { partialResult, next in
+                    partialResult.append(next)
+                }
                 .compactMap { $0?.cast() }
         })
         
         restorer.setup(using: self, childRestorables: { [weak self] in
             guard let self else { return [] }
-            return [tabsCoordinator, self.destinationFeature]
+            return flowFeatures
+                .values
+                .map { $0 }
+                .reduce(into: [destinationFeature]) { partialResult, next in
+                    partialResult.append(next)
+                }
                 .compactMap { $0?.cast() }
         })
     }
@@ -145,28 +159,44 @@ class RootCoordinatorStore: ObservableObject, FlowNavigationObservable, ModalNav
         }
     }
     
+    private func makeFeature(for flow: Flow) {
+        switch flow {
+        case .tabs:
+            let tabsCoordinator = factory.makeTabsCoordinator(
+                onAccountButtonTapped: { [weak self] in
+                    self?.present(destination: .sheet(.account))
+                },
+                onLoginButtonTapped: { [weak self] in
+                    self?.present(destination: .sheet(.auth))
+                }
+            )
+            
+            flowFeatures[flow] = tabsCoordinator
+        }
+    }
+    
     private func makeFeature(for destination: Destination) {
         switch destination {
         case .sheet(let sheet):
             switch sheet {
             case .auth:
-                let view = factory.makeAuthCoordinator(onFinished: { [weak self] in
+                let feature = factory.makeAuthCoordinator(onFinished: { [weak self] in
                     self?.present(destination: .sheet(.account))
                 })
-                destinationFeature = view
+                destinationFeature = feature
             case .account:
-                let view = factory.makeAccountCoordinator(onFinished: { [weak self] in
+                let feature = factory.makeAccountCoordinator(onFinished: { [weak self] in
                     self?.dismiss()
                 })
-                destinationFeature = view
+                destinationFeature = feature
             }
         case .fullscreenCover(let fullscreenCover):
             switch fullscreenCover {
             case .onboarding:
-                let view = factory.makeOnboardingCoordinator(onFinished: { [weak self] in
+                let feature = factory.makeOnboardingCoordinator(onFinished: { [weak self] in
                     self?.dismiss()
                 })
-                destinationFeature = view
+                destinationFeature = feature
             }
         }
     }
