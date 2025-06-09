@@ -9,39 +9,6 @@ import Foundation
 
 @MainActor
 class RootCoordinatorStore: ObservableObject, FlowNavigationObservable, ModalNavigationObservable {
-    enum Flow: Hashable, Codable {
-        case tabs
-    }
-    
-    enum Destination: Identifiable, Hashable, Codable {
-        enum Sheet: Identifiable, Codable {
-            case auth
-            case account
-            
-            var id: AnyHashable { self }
-        }
-        
-        enum FullscreenCover: Identifiable, Codable {
-            case onboarding
-            
-            var id: AnyHashable { self }
-        }
-        case sheet(Sheet)
-        case fullscreenCover(FullscreenCover)
-        
-        var id: AnyHashable { self }
-        
-        var sheet: Sheet? {
-            guard case .sheet(let sheet) = self else { return nil }
-            return sheet
-        }
-        
-        var fullscreenCover: FullscreenCover? {
-            guard case .fullscreenCover(let fullscreenCover) = self else { return nil }
-            return fullscreenCover
-        }
-    }
-    
     @Published private(set) var flow: Flow
     @Published private(set) var destination: Destination?
     
@@ -192,6 +159,41 @@ class RootCoordinatorStore: ObservableObject, FlowNavigationObservable, ModalNav
     }
 }
 
+extension RootCoordinatorStore {
+    enum Flow: Hashable, Codable {
+        case tabs
+    }
+    
+    enum Destination: Identifiable, Hashable, Codable {
+        enum Sheet: Identifiable, Codable {
+            case auth
+            case account
+            
+            var id: AnyHashable { self }
+        }
+        
+        enum FullscreenCover: Identifiable, Codable {
+            case onboarding
+            
+            var id: AnyHashable { self }
+        }
+        case sheet(Sheet)
+        case fullscreenCover(FullscreenCover)
+        
+        var id: AnyHashable { self }
+        
+        var sheet: Sheet? {
+            guard case .sheet(let sheet) = self else { return nil }
+            return sheet
+        }
+        
+        var fullscreenCover: FullscreenCover? {
+            guard case .fullscreenCover(let fullscreenCover) = self else { return nil }
+            return fullscreenCover
+        }
+    }
+}
+
 extension RootCoordinatorStore: Routable {
     func handle(step: RootStep) async {
         switch step {
@@ -213,7 +215,7 @@ extension RootCoordinatorStore: Routable {
 
 extension RootCoordinatorStore: Restorable {
     func captureState() async -> RootState {
-        return .init(destination: destination)
+        return .init(destination: destination, flow: flow)
     }
     
     func restore(state: RootState) async {
@@ -224,6 +226,7 @@ extension RootCoordinatorStore: Restorable {
 
 struct RootState: Codable {
     let destination: RootCoordinatorStore.Destination?
+    let flow: RootCoordinatorStore.Flow
 }
 
 enum RootStep: Decodable {

@@ -9,18 +9,6 @@ import Foundation
 
 @MainActor
 class HomeCoordinatorStore: ObservableObject, StackNavigationObservable, ModalNavigationObservable {
-    enum Path: Hashable, Codable {
-        case screenA
-        case screenB(id: Int)
-        case screenC
-    }
-    
-    enum Destination: Hashable, Identifiable, Codable {
-        case screenB(id: Int)
-        
-        var id: AnyHashable { self }
-    }
-    
     @Published private(set) var destination: Destination?
     @Published private(set) var path: [Path] = []
     @Published private(set) var authState: AuthState?
@@ -175,6 +163,20 @@ class HomeCoordinatorStore: ObservableObject, StackNavigationObservable, ModalNa
         let lastPath = path.removeLast()
         
         pathFeatures[lastPath] = nil
+    }
+}
+
+extension HomeCoordinatorStore {
+    enum Path: Hashable, Codable {
+        case screenA
+        case screenB(id: Int)
+        case screenC
+    }
+    
+    enum Destination: Hashable, Identifiable, Codable {
+        case screenB(id: Int)
+        
+        var id: AnyHashable { self }
     }
 }
 

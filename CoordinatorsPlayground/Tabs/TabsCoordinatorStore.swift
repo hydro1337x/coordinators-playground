@@ -9,11 +9,6 @@ import Foundation
 
 @MainActor
 class TabsCoordinatorStore: ObservableObject, TabNavigationObservable {
-    enum Tab: CaseIterable, Codable {
-        case home
-        case second
-    }
-    
     @Published private(set) var tab: Tab
     @Published private(set) var isTabBarVisible: Bool = true
     
@@ -80,6 +75,13 @@ class TabsCoordinatorStore: ObservableObject, TabNavigationObservable {
     
     private func show(tab: Tab) {
         self.tab = tab
+    }
+}
+
+extension TabsCoordinatorStore {
+    enum Tab: CaseIterable, Codable {
+        case home
+        case second
     }
 }
 

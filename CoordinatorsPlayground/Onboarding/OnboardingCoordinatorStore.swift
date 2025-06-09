@@ -9,11 +9,6 @@ import Foundation
 
 @MainActor
 class OnboardingCoordinatorStore: ObservableObject, TabNavigationObservable {
-    enum Tab: Hashable {
-        case screenA
-        case screenB
-    }
-    
     @Published private(set) var tab: Tab = .screenA
     
     private(set) var tabFeatures: [Tab : Feature] = [:]
@@ -26,5 +21,12 @@ class OnboardingCoordinatorStore: ObservableObject, TabNavigationObservable {
     
     func handleSkipButtonTapped() {
         onFinished()
+    }
+}
+
+extension OnboardingCoordinatorStore {
+    enum Tab: Hashable {
+        case screenA
+        case screenB
     }
 }

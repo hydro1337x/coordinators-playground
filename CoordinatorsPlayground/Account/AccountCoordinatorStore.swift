@@ -9,27 +9,6 @@ import Foundation
 
 @MainActor
 class AccountCoordinatorStore: ObservableObject, StackNavigationObservable, ModalNavigationObservable {
-    enum Destination: Identifiable, Hashable, Codable {
-        enum Sheet: Identifiable, Hashable, Codable {
-            case help
-            
-            var id: AnyHashable { self }
-        }
-        
-        case sheet(Sheet)
-        
-        var id: AnyHashable { self }
-        
-        var sheet: Sheet? {
-            guard case .sheet(let sheet) = self else { return nil }
-            return sheet
-        }
-    }
-    
-    enum Path: Hashable, Codable {
-        case details
-    }
-    
     @Published private(set) var destination: Destination?
     @Published private(set) var path: [Path] = []
     
@@ -140,6 +119,29 @@ class AccountCoordinatorStore: ObservableObject, StackNavigationObservable, Moda
     private func dismiss() {
         destinationFeature = nil
         self.destination = nil
+    }
+}
+
+extension AccountCoordinatorStore {
+    enum Destination: Identifiable, Hashable, Codable {
+        enum Sheet: Identifiable, Hashable, Codable {
+            case help
+            
+            var id: AnyHashable { self }
+        }
+        
+        case sheet(Sheet)
+        
+        var id: AnyHashable { self }
+        
+        var sheet: Sheet? {
+            guard case .sheet(let sheet) = self else { return nil }
+            return sheet
+        }
+    }
+    
+    enum Path: Hashable, Codable {
+        case details
     }
 }
 
