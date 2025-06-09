@@ -7,69 +7,6 @@
 
 import Foundation
 
-@MainActor
-protocol NavigationObservable: AnyObject {}
-
-protocol ModalNavigationObservable: NavigationObservable {
-    associatedtype Destination: Hashable
-    var destination: Destination? { get }
-    var destinationFeature: Feature? { get }
-}
-
-protocol StackNavigationObservable: NavigationObservable {
-    associatedtype Path: Hashable
-    var path: [Path] { get }
-    var pathFeatures: [Path: Feature] { get }
-}
-
-private extension StackNavigationObservable {
-    var erasedPathFeatures: [AnyHashable: Feature] {
-        var dict: [AnyHashable: Feature] = [:]
-        
-        for (key, value) in pathFeatures {
-            dict[AnyHashable(key)] = value
-        }
-        
-        return dict
-    }
-}
-
-protocol TabNavigationObservable: NavigationObservable {
-    associatedtype Tab: Hashable
-    var tab: Tab { get }
-    var tabFeatures: [Tab: Feature] { get }
-}
-
-extension TabNavigationObservable {
-    var erasedTabFeatures: [AnyHashable: Feature] {
-        var dict: [AnyHashable: Feature] = [:]
-        
-        for (key, value) in tabFeatures {
-            dict[AnyHashable(key)] = value
-        }
-        
-        return dict
-    }
-}
-
-protocol FlowNavigationObservable: NavigationObservable {
-    associatedtype Flow: Hashable
-    var flow: Flow { get }
-    var flowFeatures: [Flow: Feature] { get }
-}
-
-extension FlowNavigationObservable {
-    var erasedFlowFeatures: [AnyHashable: Feature] {
-        var dict: [AnyHashable: Feature] = [:]
-        
-        for (key, value) in flowFeatures {
-            dict[AnyHashable(key)] = value
-        }
-        
-        return dict
-    }
-}
-
 enum NavigationContext: String {
     case root
     case tab
@@ -237,8 +174,7 @@ extension NavigationObserver {
         // Recursively get all children branches
         var childBranches: [NavigationBranch] = []
 
-        if let modalObservable = observable as? (any ModalNavigationObservable),
-           let destination = modalObservable.destinationFeature?.cast(to: NavigationObservable.self) {
+        if let modalObservable = observable as? (any ModalNavigationObservable), let destination = modalObservable.destinationFeature?.cast(to: NavigationObservable.self) {
             let childBranch = buildNavigationBranches(from: destination, context: .modal, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
@@ -265,5 +201,41 @@ extension NavigationObserver {
 
         // Attach current node to each child branch
         return childBranches.map { [node] + $0 }
+    }
+}
+
+private extension StackNavigationObservable {
+    var erasedPathFeatures: [AnyHashable: Feature] {
+        var dict: [AnyHashable: Feature] = [:]
+        
+        for (key, value) in pathFeatures {
+            dict[AnyHashable(key)] = value
+        }
+        
+        return dict
+    }
+}
+
+private extension TabNavigationObservable {
+    var erasedTabFeatures: [AnyHashable: Feature] {
+        var dict: [AnyHashable: Feature] = [:]
+        
+        for (key, value) in tabFeatures {
+            dict[AnyHashable(key)] = value
+        }
+        
+        return dict
+    }
+}
+
+private extension FlowNavigationObservable {
+    var erasedFlowFeatures: [AnyHashable: Feature] {
+        var dict: [AnyHashable: Feature] = [:]
+        
+        for (key, value) in flowFeatures {
+            dict[AnyHashable(key)] = value
+        }
+        
+        return dict
     }
 }
