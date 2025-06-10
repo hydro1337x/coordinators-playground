@@ -64,7 +64,7 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
         let restorer = DefaultRestorer<TabsState>()
         router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         let store = TabsCoordinatorStore(
-            selectedTab: .second,
+            selectedTab: .search,
             factory: tabsCoordinatorFactory,
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)

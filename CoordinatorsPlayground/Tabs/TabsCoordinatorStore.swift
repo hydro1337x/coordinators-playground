@@ -25,7 +25,7 @@ class TabsCoordinatorStore: ObservableObject, TabNavigationObservable {
         self.factory = factory
         self.router = router
         self.restorer = restorer
-        self.tab = .second
+        self.tab = .search
         
         Tab.allCases.forEach { makeFeature(for: $0) }
         
@@ -56,8 +56,16 @@ class TabsCoordinatorStore: ObservableObject, TabNavigationObservable {
                 }
             )
             tabFeatures[tab] = feature
-        case .second:
-            break
+        case .search:
+            let feature = factory.makeSearchCoordinator(
+                onAccountButtonTapped: { [weak self] in
+                    self?.onAccountButtonTapped()
+                },
+                onLoginButtonTapped: { [weak self] in
+                    self?.onLoginButtonTapped()
+                }
+            )
+            tabFeatures[tab] = feature
         }
     }
     
@@ -81,7 +89,7 @@ class TabsCoordinatorStore: ObservableObject, TabNavigationObservable {
 extension TabsCoordinatorStore {
     enum Tab: CaseIterable, Codable {
         case home
-        case second
+        case search
     }
 }
 
@@ -93,7 +101,7 @@ extension TabsCoordinatorStore: Routable {
             case .home:
                 show(tab: .home)
             case .profile:
-                show(tab: .second)
+                show(tab: .search)
             }
         }
     }

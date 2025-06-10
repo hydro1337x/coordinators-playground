@@ -25,11 +25,13 @@ struct TabsCoordinator: View {
                         }
                 }
                 
-                ProfileScreen()
-                    .tag(TabsCoordinatorStore.Tab.second)
-                    .tabItem {
-                        Image(systemName: "paperplane")
-                    }
+                if let tabFeature = store.tabFeatures[.search] {
+                    tabFeature
+                        .tag(TabsCoordinatorStore.Tab.search)
+                        .tabItem {
+                            Image(systemName: "paperplane")
+                        }
+                }
             }
             .overlay {
                 makeFloatingStack()

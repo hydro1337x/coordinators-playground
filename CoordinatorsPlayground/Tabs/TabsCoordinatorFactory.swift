@@ -13,6 +13,11 @@ protocol TabsCoordinatorFactory {
         onAccountButtonTapped: @escaping () -> Void,
         onLoginButtonTapped: @escaping () -> Void
     ) -> Feature
+    
+    func makeSearchCoordinator(
+        onAccountButtonTapped: @escaping () -> Void,
+        onLoginButtonTapped: @escaping () -> Void
+    ) -> Feature
 }
 
 struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
@@ -42,6 +47,18 @@ struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
         navigationObserver.observe(observable: store, path: \.$path, destination: \.$destination)
         
         let view = HomeCoordinator(store: store)
+        return Feature(view: view, store: store)
+    }
+    
+    func makeSearchCoordinator(
+        onAccountButtonTapped: @escaping () -> Void,
+        onLoginButtonTapped: @escaping () -> Void
+    ) -> Feature {
+        let store = SearchCoordinatorStore(authStateService: authStateService)
+        store.onAccountButtonTapped = onAccountButtonTapped
+        store.onLoginButtonTapped = onLoginButtonTapped
+        navigationObserver.observe(observable: store, state: \.$tab)
+        let view = SearchCoordinator(store: store)
         return Feature(view: view, store: store)
     }
 }
