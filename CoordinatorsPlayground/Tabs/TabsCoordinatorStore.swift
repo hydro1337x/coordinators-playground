@@ -100,7 +100,7 @@ extension TabsCoordinatorStore: Routable {
             switch tab {
             case .home:
                 show(tab: .home)
-            case .profile:
+            case .search:
                 show(tab: .search)
             }
         }
@@ -124,7 +124,7 @@ struct TabsState: Codable {
 enum TabsStep: Decodable {
     enum Tab: Decodable {
         case home
-        case profile
+        case search
     }
     
     case change(tab: Tab)

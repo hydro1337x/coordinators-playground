@@ -87,4 +87,59 @@ struct CoordinatorsPlaygroundTests {
 //        }
 //      ]
 //    }
+    
+//    {
+//      "step": {
+//        "transition": {
+//          "flow": {
+//            "tabs": {}
+//          }
+//        }
+//      },
+//      "children": [
+//        {
+//          "step": {
+//            "change": {
+//              "tab": {
+//                "search": {}
+//              }
+//            }
+//          },
+//          "children": [
+//            {
+//              "step": {
+//                "change": {
+//                  "tab": {
+//                    "videoFeed": {}
+//                  }
+//                }
+//              },
+//              "children": []
+//            },
+//            {
+//              "step": {
+//                "present": {
+//                  "destination": {
+//                    "account": {
+//                      "authToken": "secretToken"
+//                    }
+//                  }
+//                }
+//              },
+//              "children": [
+//                {
+//                  "step": {
+//                    "present": {
+//                      "destination": {
+//                        "help": {}
+//                      }
+//                    }
+//                  }
+//                }
+//              ]
+//            }
+//          ]
+//        }
+//      ]
+//    }
 }

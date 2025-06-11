@@ -9,41 +9,18 @@ import SwiftUI
 
 struct AccountCoordinator: View {
     @ObservedObject var store: AccountCoordinatorStore
+    let makeFloatingStack: () -> AnyView
     
     var body: some View {
         NavigationStack(path: .binding(state: { store.path }, with: store.handlePathChanged)) {
-            VStack {
-                Text("User Bob Account")
-                VStack {
-                    Button("Push Details") {
-                        store.handleShowDetailsButtonTapped()
-                    }
-                    Button("Present Help") {
-                        store.handlePresentHelpButtonTapped()
-                    }
-                    Text("Theme")
-                    HStack {
-                        Button("Light") {
-                            Task {  await store.handleLightThemeButtonTapped() }
-                        }
-                        
-                        Button("Dark") {
-                            Task { await store.handleDarkThemeButtonTapped() }
-                        }
+            makeRootFeature()
+                .navigationDestination(for: AccountCoordinatorStore.Path.self) { path in
+                    switch path {
+                    case .details:
+                        makeFeature(for: path)
                     }
                 }
-                Spacer()
-                Button("Logout") {
-                    Task { await store.handleLogoutButtonTapped() }
-                }
-            }
-            .navigationDestination(for: AccountCoordinatorStore.Path.self) { path in
-                switch path {
-                case .details:
-                    makeFeature(for: path)
-                }
-            }
-            .navigationTitle("Account")
+                .navigationTitle("Account")
         }
         .sheet(item: .binding(
                     state: { store.destination?.sheet },
@@ -54,6 +31,18 @@ struct AccountCoordinator: View {
             case .help:
                 makeDestinatonFeature()
             }
+        }
+        .overlay {
+            makeFloatingStack()
+        }
+    }
+    
+    @ViewBuilder
+    func makeRootFeature() -> some View {
+        if let view = store.rootFeature {
+            view
+        } else {
+            Text("Something went wrong")
         }
     }
     

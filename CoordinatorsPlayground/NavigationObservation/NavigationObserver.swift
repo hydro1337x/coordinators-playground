@@ -34,6 +34,8 @@ import Combine
 
 @MainActor
 class NavigationObserver {
+    @Published private(set) var topVisibleState: AnyHashable?
+    
     private weak var root: NavigationObservable?
     private var cancellables: Set<AnyCancellable> = []
     private let navigationChangedSubject = PassthroughSubject<AnyHashable, Never>()
@@ -118,6 +120,7 @@ extension NavigationObserver {
         }).first
         
         if let topVisibleState {
+            self.topVisibleState = topVisibleState.state
             print("📍 Topmost: \(topVisibleState.state) in \(type(of: topVisibleState.observable))")
         } else {
             print("⚠️ No topmost state found")

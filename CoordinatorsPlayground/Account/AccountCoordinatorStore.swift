@@ -13,22 +13,31 @@ class AccountCoordinatorStore: ObservableObject, StackNavigationObservable, Moda
     @Published private(set) var path: [Path] = []
     
     private(set) var destinationFeature: Feature?
+    private(set) var rootFeature: Feature?
     private(set) var pathFeatures: [Path: Feature] = [:]
     
     var onFinished: () -> Void = unimplemented()
     
-    private let logoutService: LogoutService
-    private let themeService: SetThemeService
     private let factory: AccountCoordinatorFactory
     let router: any Router<AccountStep>
     let restorer: any Restorer<AccountState>
     
-    init(logoutService: LogoutService, themeService: SetThemeService, factory: AccountCoordinatorFactory, router: any Router<AccountStep>, restorer: any Restorer<AccountState>) {
-        self.logoutService = logoutService
-        self.themeService = themeService
+    init(factory: AccountCoordinatorFactory, router: any Router<AccountStep>, restorer: any Restorer<AccountState>) {
         self.factory = factory
         self.router = router
         self.restorer = restorer
+        
+        rootFeature = factory.makeAccountRoot(
+            onDetailsButtonTapped: { [weak self] in
+                self?.push(path: .details)
+            },
+            onHelpButtonTapped: { [weak self] in
+                self?.present(destination: .sheet(.help))
+            },
+            onLogoutFinished: { [weak self] in
+                self?.onFinished()
+            }
+        )
         
         router.setup(using: self, childRoutables: {
             []
@@ -61,14 +70,6 @@ class AccountCoordinatorStore: ObservableObject, StackNavigationObservable, Moda
         path = newPath
     }
     
-    func handleShowDetailsButtonTapped() {
-        push(path: .details)
-    }
-    
-    func handlePresentHelpButtonTapped() {
-        present(destination: .sheet(.help))
-    }
-    
     private func makeFeature(for destination: Destination) {
         switch destination {
         case .sheet(let sheet):
@@ -89,20 +90,6 @@ class AccountCoordinatorStore: ObservableObject, StackNavigationObservable, Moda
         case .details:
             pathFeatures[path] = factory.makeAccountDetails()
         }
-    }
-    
-    func handleLightThemeButtonTapped() async {
-        await themeService.set(theme: .light)
-    }
-    
-    func handleDarkThemeButtonTapped() async {
-        await themeService.set(theme: .dark)
-    }
-    
-    func handleLogoutButtonTapped() async {
-        await logoutService.logout()
-        
-        onFinished()
     }
     
     private func push(path: Path) {

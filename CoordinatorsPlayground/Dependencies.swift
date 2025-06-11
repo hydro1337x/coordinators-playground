@@ -35,8 +35,11 @@ final class Dependencies {
     lazy var snapshotService = UserDefaultsRestorableSnapshotService()
     lazy var authStateService = AuthStateProvider()
     lazy var authService = AuthService(service: authStateService)
-    lazy var floatingStackStore = FloatingStackStore(clock: ContinuousClock())
-    lazy var accountCoordinatorFactory = DefaultAccountCoordinatorFactory()
+    lazy var floatingStackStore = FloatingStackStore(
+        clock: ContinuousClock(),
+        topVisibleState: navigationObserver.$topVisibleState.eraseToAnyPublisher()
+    )
+    lazy var accountCoordinatorFactory = DefaultAccountCoordinatorFactory(authService: authService, themeService: themeService)
     lazy var homeCoordinatorFactory = DefaultHomeCoordinatorFactory(tabsCoordinatorAdapter: tabsCoordinatorAdapter)
     lazy var tabsCoordinatorFactory = DefaultTabsCoordinatorFactory(
         authStateService: authStateService,

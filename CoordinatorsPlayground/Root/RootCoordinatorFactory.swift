@@ -18,7 +18,7 @@ protocol RootCoordinatorFactory {
 
 struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
     let authStateService: AuthStateStreamService
-    let authService: AuthTokenLoginService & LogoutService
+    let authService: AuthService
     let accountCoordinatorFactory: DefaultAccountCoordinatorFactory
     let tabsCoordinatorFactory: DefaultTabsCoordinatorFactory
     let themeService: UserDefaultsThemeService
@@ -39,15 +39,18 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
         let restorer = DefaultRestorer<AccountState>()
         router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         let store = AccountCoordinatorStore(
-            logoutService: authService,
-            themeService: themeService,
             factory: accountCoordinatorFactory,
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         store.onFinished = onFinished
         navigationObserver.observe(observable: store, path: \.$path, destination: \.$destination)
-        let view = AccountCoordinator(store: store)
+        let view = AccountCoordinator(
+            store: store,
+            makeFloatingStack: { [floatingStackStore] in
+                AnyView(FloatingStack(store: floatingStackStore))
+            }
+        )
         return Feature(view: view, store: store)
     }
     

@@ -54,9 +54,14 @@ struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
         onAccountButtonTapped: @escaping () -> Void,
         onLoginButtonTapped: @escaping () -> Void
     ) -> Feature {
-        let store = SearchCoordinatorStore(authStateService: authStateService)
+        let router = DefaultRouter<SearchStep>()
+        let store = SearchCoordinatorStore(
+            authStateService: authStateService,
+            router: LoggingRouterDecorator(decorating: router)
+        )
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
+        router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         navigationObserver.observe(observable: store, state: \.$tab)
         let view = SearchCoordinator(store: store)
         return Feature(view: view, store: store)

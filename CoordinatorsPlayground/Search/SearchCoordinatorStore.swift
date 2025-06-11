@@ -17,10 +17,17 @@ class SearchCoordinatorStore: ObservableObject, TabNavigationObservable {
     var onLoginButtonTapped: () -> Void = unimplemented()
     
     private let authStateService: AuthStateStreamService
+    let router: any Router<SearchStep>
     
-    init(tab: Tab = .imageFeed, authStateService: AuthStateStreamService) {
+    init(tab: Tab = .imageFeed, authStateService: AuthStateStreamService, router: any Router<SearchStep>) {
         self.tab = tab
         self.authStateService = authStateService
+        self.router = router
+        
+        router.setup(using: self, childRoutables: { [weak self] in
+            guard let self else { return [] }
+            return self.tabFeatures.values.compactMap { $0.cast() }
+        })
     }
     
     func handleTabChanged(_ tab: Tab) {
@@ -40,6 +47,10 @@ class SearchCoordinatorStore: ObservableObject, TabNavigationObservable {
             authState = state
         }
     }
+    
+    private func change(tab: Tab) {
+        self.tab = tab
+    }
 }
 
 extension SearchCoordinatorStore {
@@ -47,4 +58,27 @@ extension SearchCoordinatorStore {
         case imageFeed
         case videoFeed
     }
+}
+
+extension SearchCoordinatorStore: Routable {
+    func handle(step: SearchStep) async {
+        switch step {
+        case .change(let tab):
+            switch tab {
+            case .imageFeed:
+                change(tab: .imageFeed)
+            case .videoFeed:
+                change(tab: .videoFeed)
+            }
+        }
+    }
+}
+
+enum SearchStep: Decodable {
+    enum Tab: Decodable {
+        case imageFeed
+        case videoFeed
+    }
+    
+    case change(tab: Tab)
 }

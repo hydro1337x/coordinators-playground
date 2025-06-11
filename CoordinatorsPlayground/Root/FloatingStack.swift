@@ -26,6 +26,7 @@ struct FloatingStack: View {
                 }
             }
         }
+        .padding(.bottom, store.dynamicPadding)
         .padding(.bottom, 8)
         .animation(.default, value: store.queue)
     }
@@ -135,14 +136,27 @@ struct ActionFeedbackMessage: Equatable {
     }
 }
 
+import Combine
+
 @MainActor
 final class FloatingStackStore: ObservableObject {
     @Published private(set) var queue: [FeedbackMessage] = []
+    @Published private(set) var dynamicPadding: CGFloat = 0
     
     private let clock: any Clock<Duration>
     
-    init(clock: any Clock<Duration>) {
+    init(clock: any Clock<Duration>, topVisibleState: AnyPublisher<AnyHashable?, Never>) {
         self.clock = clock
+        
+        topVisibleState
+            .map {
+                if let destination = $0 as? RootCoordinatorStore.Destination, destination == .sheet(.account) {
+                    return Double(50)
+                } else {
+                    return Double(0)
+                }
+            }
+            .assign(to: &$dynamicPadding)
         
         simulateSequence()
     }
@@ -158,21 +172,20 @@ final class FloatingStackStore: ObservableObject {
     }
     
     func simulateSequence() {
-        let info = BasicFeedbackMessage(description: "Some Info", intent: .info)
-        let success = BasicFeedbackMessage(description: "Some Success", intent: .success)
-        let warning = BasicFeedbackMessage(description: "Some Warning", intent: .warning)
-        let error = BasicFeedbackMessage(description: "Some Error", intent: .failure)
-        
         Task {
-            try await Task.sleep(for: .seconds(5))
-            enqueue(message: .basic(success))
-            try await Task.sleep(for: .seconds(3))
-            enqueue(message: .basic(info))
-            try await Task.sleep(for: .seconds(3))
-            enqueue(message: .basic(error))
-            try await Task.sleep(for: .seconds(3))
-            enqueue(message: .basic(warning))
-            try await Task.sleep(for: .seconds(3))
+            while true {
+                let info = BasicFeedbackMessage(description: "Some Info", intent: .info)
+                let success = BasicFeedbackMessage(description: "Some Success", intent: .success)
+                let warning = BasicFeedbackMessage(description: "Some Warning", intent: .warning)
+                let error = BasicFeedbackMessage(description: "Some Error", intent: .failure)
+                
+                let items = [info, success, warning, error]
+                
+                let i = Int.random(in: 0...3)
+                let item = items[i]
+                try await Task.sleep(for: .seconds(i + 1))
+                enqueue(message: .basic(item))
+            }
         }
     }
 }
