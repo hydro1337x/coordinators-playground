@@ -24,6 +24,7 @@ struct CoordinatorsPlaygroundApp: App {
                 .onChange(of: scenePhase, perform: store.handleScenePhaseChanged)
                 .onFirstAppear(perform: store.handleOnFirstAppear)
                 .onOpenURL(perform: store.handleOnURLOpen)
+                .animation(.default, value: store.currentTheme)
         }
     }
 }
