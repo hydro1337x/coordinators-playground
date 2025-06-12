@@ -177,23 +177,23 @@ extension NavigationObserver {
         // Recursively get all children branches
         var childBranches: [NavigationBranch] = []
 
-        if let modalObservable = observable as? (any ModalNavigationObservable), let destination = modalObservable.destinationFeature?.cast(to: NavigationObservable.self) {
-            let childBranch = buildNavigationBranches(from: destination, context: .modal, currentElevation: elevation)
+        if let modalObservable = observable as? (any ModalNavigationObservable), let childObservable = modalObservable.destinationFeature?.cast(to: NavigationObservable.self) {
+            let childBranch = buildNavigationBranches(from: childObservable, context: .modal, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
 
-        if let stackObservable = observable as? (any StackNavigationObservable), let last = stackObservable.path.last, let destination = stackObservable.erasedPathFeatures[AnyHashable(last)]?.cast(to: NavigationObservable.self) {
-            let childBranch = buildNavigationBranches(from: destination, context: .stack, currentElevation: elevation)
+        if let stackObservable = observable as? (any StackNavigationObservable), let last = stackObservable.path.last, let childObservable = stackObservable.erasedPathFeatures[AnyHashable(last)]?.cast(to: NavigationObservable.self) {
+            let childBranch = buildNavigationBranches(from: childObservable, context: .stack, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
 
-        if let tabObservable = observable as? (any TabNavigationObservable), let destination = tabObservable.erasedTabFeatures[AnyHashable(tabObservable.tab)]?.cast(to: NavigationObservable.self) {
-            let childBranch = buildNavigationBranches(from: destination, context: .tab, currentElevation: elevation)
+        if let tabObservable = observable as? (any TabNavigationObservable), let childObservable = tabObservable.erasedTabFeatures[AnyHashable(tabObservable.tab)]?.cast(to: NavigationObservable.self) {
+            let childBranch = buildNavigationBranches(from: childObservable, context: .tab, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
 
-        if let flowObservable = observable as? (any FlowNavigationObservable), let destination = flowObservable.erasedFlowFeatures[AnyHashable(flowObservable.flow)]?.cast(to: NavigationObservable.self) {
-            let childBranch = buildNavigationBranches(from: destination, context: .flow, currentElevation: elevation)
+        if let flowObservable = observable as? (any FlowNavigationObservable), let childObservable = flowObservable.erasedFlowFeatures[AnyHashable(flowObservable.flow)]?.cast(to: NavigationObservable.self) {
+            let childBranch = buildNavigationBranches(from: childObservable, context: .flow, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
 
