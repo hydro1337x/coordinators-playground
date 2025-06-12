@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-class RootCoordinatorStore: ObservableObject, FlowNavigationObservable, ModalNavigationObservable {
+class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator {
     @Published private(set) var flow: Flow
     @Published private(set) var destination: Destination?
     
@@ -41,18 +41,7 @@ class RootCoordinatorStore: ObservableObject, FlowNavigationObservable, ModalNav
         makeFeature(for: flow)
         
         // MARK: - abstract with makeFeature(for flow:)
-        
-        
-        router.setup(using: self, childRoutables: { [weak self] in
-            guard let self else { return [] }
-            return flowFeatures
-                .values
-                .map { $0 }
-                .reduce(into: [destinationFeature]) { partialResult, next in
-                    partialResult.append(next)
-                }
-                .compactMap { $0?.cast() }
-        })
+        router.register(routable: self)
         
         restorer.setup(using: self, childRestorables: { [weak self] in
             guard let self else { return [] }

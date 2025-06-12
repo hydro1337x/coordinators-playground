@@ -17,9 +17,11 @@ class RootRouter<S: Decodable>: Router {
     
     var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
     
-    func setup(using routable: any Routable<Step>, childRoutables: @escaping () -> [any Routable]) {
+    func register(routable: any Routable<Step>) {
         self.routable = routable
-        self.childRoutables = childRoutables
+        self.childRoutables = { [weak routable] in
+            routable?.childRoutables() ?? []
+        }
         self.onUnhandledRoute = { [weak self] route in
             guard let self else { return false }
             return await self.handle(route: route)

@@ -16,14 +16,14 @@ enum NavigationContext: String {
 }
 
 struct NavigationNode {
-    let observable: NavigationObservable
+    let observable: Coordinator
     let context: NavigationContext
     let elevation: Int
 }
 
 struct NavigationState {
     let state: AnyHashable
-    let observable: NavigationObservable
+    let observable: Coordinator
     let elevation: Int
     let depth: Int
 }
@@ -36,7 +36,7 @@ import Combine
 class NavigationObserver {
     @Published private(set) var topVisibleState: AnyHashable?
     
-    private weak var root: NavigationObservable?
+    private weak var root: Coordinator?
     private var cancellables: Set<AnyCancellable> = []
     private let navigationChangedSubject = PassthroughSubject<AnyHashable, Never>()
     private let scheduler: AnySchedulerOf<RunLoop>
@@ -55,7 +55,7 @@ class NavigationObserver {
             .store(in: &cancellables)
     }
     
-    func observe<T>(observable: T, state: KeyPath<T, Published<T.Destination?>.Publisher>) where T: ObservableObject & ModalNavigationObservable {
+    func observe<T>(observable: T, state: KeyPath<T, Published<T.Destination?>.Publisher>) where T: ObservableObject & ModalCoordinator {
         observable[keyPath: state]
             .sink { [navigationChangedSubject] state in
                 navigationChangedSubject.send(state)
@@ -63,7 +63,7 @@ class NavigationObserver {
             .store(in: &cancellables)
     }
     
-    func observe<T>(observable: T, state: KeyPath<T, Published<[T.Path]>.Publisher>) where T: ObservableObject & StackNavigationObservable {
+    func observe<T>(observable: T, state: KeyPath<T, Published<[T.Path]>.Publisher>) where T: ObservableObject & StackCoordinator {
         observable[keyPath: state]
             .sink { [navigationChangedSubject] state in
                 navigationChangedSubject.send(state)
@@ -71,7 +71,7 @@ class NavigationObserver {
             .store(in: &cancellables)
     }
     
-    func observe<T>(observable: T, state: KeyPath<T, Published<T.Tab>.Publisher>) where T: ObservableObject & TabNavigationObservable {
+    func observe<T>(observable: T, state: KeyPath<T, Published<T.Tab>.Publisher>) where T: ObservableObject & TabCoordinator {
         observable[keyPath: state]
             .sink { [navigationChangedSubject] state in
                 navigationChangedSubject.send(state)
@@ -79,7 +79,7 @@ class NavigationObserver {
             .store(in: &cancellables)
     }
     
-    func observe<T>(observable: T, state: KeyPath<T, Published<T.Flow>.Publisher>) where T: ObservableObject & FlowNavigationObservable {
+    func observe<T>(observable: T, state: KeyPath<T, Published<T.Flow>.Publisher>) where T: ObservableObject & FlowCoordinator {
         observable[keyPath: state]
             .sink { [navigationChangedSubject] state in
                 navigationChangedSubject.send(state)
@@ -87,17 +87,17 @@ class NavigationObserver {
             .store(in: &cancellables)
     }
     
-    func observe<T>(observable: T, flow: KeyPath<T, Published<T.Flow>.Publisher>, destination: KeyPath<T, Published<T.Destination?>.Publisher>) where T: ObservableObject & FlowNavigationObservable & ModalNavigationObservable {
+    func observe<T>(observable: T, flow: KeyPath<T, Published<T.Flow>.Publisher>, destination: KeyPath<T, Published<T.Destination?>.Publisher>) where T: ObservableObject & FlowCoordinator & ModalCoordinator {
         observe(observable: observable, state: flow)
         observe(observable: observable, state: destination)
     }
     
-    func observe<T>(observable: T, path: KeyPath<T, Published<[T.Path]>.Publisher>, destination: KeyPath<T, Published<T.Destination?>.Publisher>) where T: ObservableObject & StackNavigationObservable & ModalNavigationObservable {
+    func observe<T>(observable: T, path: KeyPath<T, Published<[T.Path]>.Publisher>, destination: KeyPath<T, Published<T.Destination?>.Publisher>) where T: ObservableObject & StackCoordinator & ModalCoordinator {
         observe(observable: observable, state: path)
         observe(observable: observable, state: destination)
     }
     
-    func register(root observable: NavigationObservable) {
+    func register(root observable: Coordinator) {
         self.root = observable
     }
 }
@@ -135,22 +135,22 @@ extension NavigationObserver {
             let elevation = node.elevation
             let observable = node.observable
 
-            if let modalObservable = observable as? (any ModalNavigationObservable), let destination = modalObservable.destination, elevation >= highestElevation {
+            if let modalObservable = observable as? (any ModalCoordinator), let destination = modalObservable.destination, elevation >= highestElevation {
                 highestElevation = elevation + 1
                 topVisibleState = NavigationState(state: AnyHashable(destination), observable: observable, elevation: highestElevation, depth: index)
             }
 
-            if let stackObservable = observable as? (any StackNavigationObservable), let last = stackObservable.path.last, elevation >= highestElevation {
+            if let stackObservable = observable as? (any StackCoordinator), let last = stackObservable.path.last, elevation >= highestElevation {
                 highestElevation = elevation
                 topVisibleState = NavigationState(state: AnyHashable(last), observable: observable, elevation: highestElevation, depth: index)
             }
 
-            if let tabObservable = observable as? (any TabNavigationObservable), elevation >= highestElevation {
+            if let tabObservable = observable as? (any TabCoordinator), elevation >= highestElevation {
                 highestElevation = elevation
                 topVisibleState = NavigationState(state: AnyHashable(tabObservable.tab), observable: observable, elevation: highestElevation, depth: index)
             }
 
-            if let flowObservable = observable as? (any FlowNavigationObservable), elevation >= highestElevation {
+            if let flowObservable = observable as? (any FlowCoordinator), elevation >= highestElevation {
                 highestElevation = elevation
                 topVisibleState = NavigationState(state: AnyHashable(flowObservable.flow), observable: observable, elevation: highestElevation, depth: index)
             }
@@ -160,7 +160,7 @@ extension NavigationObserver {
     }
     
     private func buildNavigationBranches(
-        from observable: NavigationObservable,
+        from observable: Coordinator,
         context: NavigationContext = .root,
         currentElevation: Int = 0
     ) -> [NavigationBranch] {
@@ -177,22 +177,22 @@ extension NavigationObserver {
         // Recursively get all children branches
         var childBranches: [NavigationBranch] = []
 
-        if let modalObservable = observable as? (any ModalNavigationObservable), let childObservable = modalObservable.destinationFeature?.cast(to: NavigationObservable.self) {
+        if let modalObservable = observable as? (any ModalCoordinator), let childObservable = modalObservable.destinationFeature?.cast(to: Coordinator.self) {
             let childBranch = buildNavigationBranches(from: childObservable, context: .modal, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
 
-        if let stackObservable = observable as? (any StackNavigationObservable), let last = stackObservable.path.last, let childObservable = stackObservable.erasedPathFeatures[AnyHashable(last)]?.cast(to: NavigationObservable.self) {
+        if let stackObservable = observable as? (any StackCoordinator), let last = stackObservable.path.last, let childObservable = stackObservable.erasedPathFeatures[AnyHashable(last)]?.cast(to: Coordinator.self) {
             let childBranch = buildNavigationBranches(from: childObservable, context: .stack, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
 
-        if let tabObservable = observable as? (any TabNavigationObservable), let childObservable = tabObservable.erasedTabFeatures[AnyHashable(tabObservable.tab)]?.cast(to: NavigationObservable.self) {
+        if let tabObservable = observable as? (any TabCoordinator), let childObservable = tabObservable.erasedTabFeatures[AnyHashable(tabObservable.tab)]?.cast(to: Coordinator.self) {
             let childBranch = buildNavigationBranches(from: childObservable, context: .tab, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
 
-        if let flowObservable = observable as? (any FlowNavigationObservable), let childObservable = flowObservable.erasedFlowFeatures[AnyHashable(flowObservable.flow)]?.cast(to: NavigationObservable.self) {
+        if let flowObservable = observable as? (any FlowCoordinator), let childObservable = flowObservable.erasedFlowFeatures[AnyHashable(flowObservable.flow)]?.cast(to: Coordinator.self) {
             let childBranch = buildNavigationBranches(from: childObservable, context: .flow, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
@@ -207,7 +207,7 @@ extension NavigationObserver {
     }
 }
 
-private extension StackNavigationObservable {
+private extension StackCoordinator {
     var erasedPathFeatures: [AnyHashable: Feature] {
         var dict: [AnyHashable: Feature] = [:]
         
@@ -219,7 +219,7 @@ private extension StackNavigationObservable {
     }
 }
 
-private extension TabNavigationObservable {
+private extension TabCoordinator {
     var erasedTabFeatures: [AnyHashable: Feature] {
         var dict: [AnyHashable: Feature] = [:]
         
@@ -231,7 +231,7 @@ private extension TabNavigationObservable {
     }
 }
 
-private extension FlowNavigationObservable {
+private extension FlowCoordinator {
     var erasedFlowFeatures: [AnyHashable: Feature] {
         var dict: [AnyHashable: Feature] = [:]
         

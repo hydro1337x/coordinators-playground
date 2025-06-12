@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-class TabsCoordinatorStore: ObservableObject, TabNavigationObservable {
+class TabsCoordinatorStore: ObservableObject, TabCoordinator {
     @Published private(set) var tab: Tab
     @Published private(set) var isTabBarVisible: Bool = true
     
@@ -29,10 +29,7 @@ class TabsCoordinatorStore: ObservableObject, TabNavigationObservable {
         
         Tab.allCases.forEach { makeFeature(for: $0) }
         
-        router.setup(using: self, childRoutables: { [weak self] in
-            guard let self else { return [] }
-            return self.tabFeatures.values.compactMap { $0.cast() }
-        })
+        router.register(routable: self)
         
         restorer.setup(using: self, childRestorables: { [weak self] in
             guard let self else { return [] }

@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-class AccountCoordinatorStore: ObservableObject, StackNavigationObservable, ModalNavigationObservable {
+class AccountCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordinator {
     @Published private(set) var destination: Destination?
     @Published private(set) var path: [Path] = []
     
@@ -39,9 +39,7 @@ class AccountCoordinatorStore: ObservableObject, StackNavigationObservable, Moda
             }
         )
         
-        router.setup(using: self, childRoutables: {
-            []
-        })
+        router.register(routable: self)
         
         restorer.setup(using: self, childRestorables: {
             []

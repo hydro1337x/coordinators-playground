@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-protocol Routable<Step>: AnyObject {
+protocol Routable<Step>: Coordinator {
     associatedtype Step: Decodable
     var router: any Router<Step> { get }
     func handle(step: Step) async
@@ -20,5 +20,5 @@ protocol Router<Step> {
     var onUnhandledRoute: (Route) async -> Bool { get }
     
     func handle(route: Route) async -> Bool
-    func setup(using routable: any Routable<Step>, childRoutables: @escaping () -> [any Routable])
+    func register(routable: any Routable<Step>)
 }

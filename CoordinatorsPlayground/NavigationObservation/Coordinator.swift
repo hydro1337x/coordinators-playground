@@ -8,27 +8,27 @@
 import Foundation
 
 @MainActor
-protocol NavigationObservable: AnyObject {}
+protocol Coordinator: AnyObject {}
 
-protocol ModalNavigationObservable: NavigationObservable {
+protocol ModalCoordinator: Coordinator {
     associatedtype Destination: Hashable
     var destination: Destination? { get }
     var destinationFeature: Feature? { get }
 }
 
-protocol StackNavigationObservable: NavigationObservable {
+protocol StackCoordinator: Coordinator {
     associatedtype Path: Hashable
     var path: [Path] { get }
     var pathFeatures: [Path: Feature] { get }
 }
 
-protocol TabNavigationObservable: NavigationObservable {
+protocol TabCoordinator: Coordinator {
     associatedtype Tab: Hashable
     var tab: Tab { get }
     var tabFeatures: [Tab: Feature] { get }
 }
 
-protocol FlowNavigationObservable: NavigationObservable {
+protocol FlowCoordinator: Coordinator {
     associatedtype Flow: Hashable
     var flow: Flow { get }
     var flowFeatures: [Flow: Feature] { get }

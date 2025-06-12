@@ -18,8 +18,8 @@ struct LoggingRouterDecorator<Step: Decodable>: Router {
         self.decoratee = decoratee
     }
 
-    func setup(using routable: any Routable<Step>, childRoutables: @escaping () -> [any Routable]) {
-        decoratee.setup(using: routable, childRoutables: childRoutables)
+    func register(routable: any Routable<Step>) {
+        decoratee.register(routable: routable)
     }
 
     func handle(route: Route) async -> Bool {

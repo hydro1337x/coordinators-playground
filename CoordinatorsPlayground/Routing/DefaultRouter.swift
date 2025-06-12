@@ -19,10 +19,15 @@ class DefaultRouter<S: Decodable>: Router {
     
     private let decoder = JSONDecoder()
     
-    func setup(using routable: any Routable<Step>, childRoutables: @escaping () -> [any Routable]) {
+    func register(routable: any Routable<Step>) {
         self.routable = routable
-        self.childRoutables = childRoutables
+        
+        self.childRoutables = { [weak routable] in
+            routable?.childRoutables() ?? []
+        }
     }
+    
+    
     
     func handle(step: Data) async -> Bool {
         guard let routable else { return false }
@@ -64,5 +69,49 @@ class DefaultRouter<S: Decodable>: Router {
         }
         
         return true
+    }
+}
+
+extension Routable {
+    func childRoutables() -> [any Routable] {
+        var childFeatures: [Feature] = []
+        
+        if let modalCoordinator = self as? (any ModalCoordinator), let feature = modalCoordinator.destinationFeature {
+            childFeatures.append(feature)
+        }
+        
+        if let stackCoordnator = self as? (any StackCoordinator) {
+            childFeatures.append(contentsOf: stackCoordnator.pathFeatureValues)
+        }
+        
+        if let tabCoordinator = self as? (any TabCoordinator) {
+            childFeatures.append(contentsOf: tabCoordinator.tabFeatureValues)
+        }
+        
+        if let flowCoordinator = self as? (any FlowCoordinator) {
+            childFeatures.append(contentsOf: flowCoordinator.flowFeatureValues)
+        }
+        
+        let childRoutables: [any Routable] = childFeatures.compactMap { $0.cast() }
+        
+        return childRoutables
+    }
+}
+
+private extension StackCoordinator {
+    var pathFeatureValues: [Feature] {
+        Array(pathFeatures.values)
+    }
+}
+
+private extension TabCoordinator {
+    var tabFeatureValues: [Feature] {
+        Array(tabFeatures.values)
+    }
+}
+
+private extension FlowCoordinator {
+    var flowFeatureValues: [Feature] {
+        Array(flowFeatures.values)
     }
 }

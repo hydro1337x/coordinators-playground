@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-class HomeCoordinatorStore: ObservableObject, StackNavigationObservable, ModalNavigationObservable {
+class HomeCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordinator {
     @Published private(set) var destination: Destination?
     @Published private(set) var path: [Path] = []
     @Published private(set) var authState: AuthState?
@@ -35,16 +35,7 @@ class HomeCoordinatorStore: ObservableObject, StackNavigationObservable, ModalNa
             self?.push(path: .screenA)
         })
         
-        router.setup(using: self, childRoutables: { [weak self] in
-            guard let self else { return [] }
-            return pathFeatures
-                .values
-                .map { $0 }
-                .reduce(into: [destinationFeature]) { partialResult, next in
-                    partialResult.append(next)
-                }
-                .compactMap { $0?.cast() }
-        })
+        router.register(routable: self)
         
         restorer.setup(using: self, childRestorables: { [weak self] in
             guard let self else { return [] }

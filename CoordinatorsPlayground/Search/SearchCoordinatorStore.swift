@@ -7,7 +7,7 @@
 
 import Foundation
 
-class SearchCoordinatorStore: ObservableObject, TabNavigationObservable {
+class SearchCoordinatorStore: ObservableObject, TabCoordinator {
     @Published private(set) var tab: Tab
     @Published private(set) var authState: AuthState?
     
@@ -24,10 +24,7 @@ class SearchCoordinatorStore: ObservableObject, TabNavigationObservable {
         self.authStateService = authStateService
         self.router = router
         
-        router.setup(using: self, childRoutables: { [weak self] in
-            guard let self else { return [] }
-            return self.tabFeatures.values.compactMap { $0.cast() }
-        })
+        router.register(routable: self)
     }
     
     func handleTabChanged(_ tab: Tab) {
