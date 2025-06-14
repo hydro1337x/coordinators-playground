@@ -92,8 +92,8 @@ extension Restorable {
             childFeatures.append(contentsOf: stackCoordnator.pathFeatureValues)
         }
         
-        if let tabCoordinator = self as? (any TabCoordinator) {
-            childFeatures.append(contentsOf: tabCoordinator.tabFeatureValues)
+        if let tabsCoordinator = self as? (any TabsCoordinator) {
+            childFeatures.append(contentsOf: tabsCoordinator.tabFeatureValues)
         }
         
         if let flowCoordinator = self as? (any FlowCoordinator) {

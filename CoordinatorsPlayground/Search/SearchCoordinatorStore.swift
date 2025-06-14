@@ -7,7 +7,7 @@
 
 import Foundation
 
-class SearchCoordinatorStore: ObservableObject, TabCoordinator {
+class SearchCoordinatorStore: ObservableObject, TabsCoordinator {
     @Published private(set) var tab: Tab
     @Published private(set) var authState: AuthState?
     

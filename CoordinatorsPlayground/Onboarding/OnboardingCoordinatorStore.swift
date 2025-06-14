@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-class OnboardingCoordinatorStore: ObservableObject, TabCoordinator {
+class OnboardingCoordinatorStore: ObservableObject, TabsCoordinator {
     @Published private(set) var tab: Tab = .screenA
     
     private(set) var tabFeatures: [Tab : Feature] = [:]

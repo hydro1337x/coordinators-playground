@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class MainTabsCoordinatorStore: ObservableObject, TabCoordinator {
+class MainTabsCoordinatorStore: ObservableObject, TabsCoordinator {
     @Published private(set) var tab: Tab
     @Published private(set) var isTabBarVisible: Bool = true
     @Published private(set) var activeTabs: [Tab]

@@ -70,7 +70,7 @@ class NavigationObserver {
             .store(in: &cancellables)
     }
     
-    func observe<T>(observable: T, state: KeyPath<T, Published<T.Tab>.Publisher>) where T: ObservableObject & TabCoordinator {
+    func observe<T>(observable: T, state: KeyPath<T, Published<T.Tab>.Publisher>) where T: ObservableObject & TabsCoordinator {
         observable[keyPath: state]
             .sink { [navigationChangedSubject] state in
                 navigationChangedSubject.send(state)
@@ -144,7 +144,7 @@ extension NavigationObserver {
                 topVisibleState = NavigationState(state: AnyHashable(last), observable: observable, elevation: highestElevation, depth: index)
             }
 
-            if let tabObservable = observable as? (any TabCoordinator), elevation >= highestElevation {
+            if let tabObservable = observable as? (any TabsCoordinator), elevation >= highestElevation {
                 highestElevation = elevation
                 topVisibleState = NavigationState(state: AnyHashable(tabObservable.tab), observable: observable, elevation: highestElevation, depth: index)
             }
@@ -186,7 +186,7 @@ extension NavigationObserver {
             childBranches.append(contentsOf: childBranch)
         }
 
-        if let tabObservable = observable as? (any TabCoordinator), let childObservable = tabObservable.erasedTabFeatures[AnyHashable(tabObservable.tab)]?.cast(to: Coordinator.self) {
+        if let tabObservable = observable as? (any TabsCoordinator), let childObservable = tabObservable.erasedTabFeatures[AnyHashable(tabObservable.tab)]?.cast(to: Coordinator.self) {
             let childBranch = buildNavigationBranches(from: childObservable, context: .tab, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
@@ -218,7 +218,7 @@ private extension StackCoordinator {
     }
 }
 
-private extension TabCoordinator {
+private extension TabsCoordinator {
     var erasedTabFeatures: [AnyHashable: Feature] {
         var dict: [AnyHashable: Feature] = [:]
         

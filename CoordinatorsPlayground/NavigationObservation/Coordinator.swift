@@ -22,7 +22,7 @@ protocol StackCoordinator: Coordinator {
     var pathFeatures: [Path: Feature] { get }
 }
 
-protocol TabCoordinator: Coordinator {
+protocol TabsCoordinator: Coordinator {
     associatedtype Tab: Hashable
     var tab: Tab { get }
     var tabFeatures: [Tab: Feature] { get }
@@ -40,7 +40,7 @@ extension StackCoordinator {
     }
 }
 
-extension TabCoordinator {
+extension TabsCoordinator {
     var tabFeatureValues: [Feature] {
         Array(tabFeatures.values)
     }
