@@ -73,9 +73,9 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
-        tabsCoordinatesAdapter.onScreenAPushed = store.hideTabBar
-        tabsCoordinatesAdapter.onScreenAPopped = store.showTabBar
-        tabsCoordinatesAdapter.onTabsChanged = store.setActiveTabs
+        tabsCoordinatesAdapter.onHideTabBar = store.hideTabBar
+        tabsCoordinatesAdapter.onShowTabBar = store.showTabBar
+        tabsCoordinatesAdapter.onActiveTabsChanged = store.setActiveTabs
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
         navigationObserver.observe(observable: store, state: \.$tab)

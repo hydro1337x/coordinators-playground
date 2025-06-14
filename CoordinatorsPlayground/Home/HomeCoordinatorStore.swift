@@ -19,7 +19,6 @@ class HomeCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordinator
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
-    var onPopped: ([Path]) -> Void = unimplemented()
     
     private let authStateService: AuthStateStreamService
     private let factory: HomeCoordinatorFactory
@@ -56,7 +55,6 @@ class HomeCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordinator
         if newPath.count < path.count {
             let poppedPath = Array(path.suffix(from: newPath.count))
             poppedPath.forEach { pathFeatures[$0] = nil }
-            onPopped(poppedPath)
         }
         
         path = newPath

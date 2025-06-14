@@ -21,10 +21,7 @@ struct DefaultHomeCoordinatorFactory: HomeCoordinatorFactory {
     
     func makeRootScreen(onButtonTap: @escaping () -> Void) -> Feature {
         let store = HomeRootStore()
-        store.onButtonTap = {
-            onButtonTap()
-            tabsCoordinatorAdapter.onScreenAPushed()
-        }
+        store.onButtonTap = onButtonTap
         let view = HomeRootScreen(store: store).navigationTitle(store.title)
         return Feature(view: view, store: store)
     }

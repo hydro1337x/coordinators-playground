@@ -13,7 +13,12 @@ struct SearchCoordinator: View {
     
     var body: some View {
         NavigationStack {
-            TabView(selection: .binding(state: { store.tab }, with: store.handleTabChanged)) {
+            TabView(
+                selection: Binding(
+                    get: { store.tab },
+                    set: { store.handleTabChanged($0) }
+                )
+            ) {
                 Group {
                     ImageFeedScreen()
                         .tag(SearchCoordinatorStore.Tab.imageFeed)
@@ -33,15 +38,21 @@ struct SearchCoordinator: View {
     func leadingToolbarGroup() -> some ToolbarContent {
         ToolbarItemGroup(placement: .topBarLeading) {
             Menu {
-                Picker("", selection: .binding(state: { store.tab }, with: { store.handleTabChanged($0) })) {
-                    Text("Image").tag(SearchCoordinatorStore.Tab.imageFeed)
-                    Text("Video").tag(SearchCoordinatorStore.Tab.videoFeed)
-                }
+                Picker(
+                    selection: Binding(
+                        get: { store.tab },
+                        set: { store.handleTabChanged($0) }
+                    ), content: {
+                        Text("Image").tag(SearchCoordinatorStore.Tab.imageFeed)
+                        Text("Video").tag(SearchCoordinatorStore.Tab.videoFeed)
+                    }, label: {
+                        EmptyView()
+                    }
+                )
                 .pickerStyle(.inline)
             } label: {
                 Image(systemName: "line.3.horizontal.decrease")
             }
-
         }
     }
     

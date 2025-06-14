@@ -45,7 +45,7 @@ struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
         )
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
-        store.onPopped = tabsCoordinatorAdapter.handlePop
+        tabsCoordinatorAdapter.subscribe(to: store.$path)
         
         navigationObserver.observe(observable: store, path: \.$path, destination: \.$destination)
         

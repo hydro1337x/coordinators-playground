@@ -13,9 +13,11 @@ struct RootCoordinator: View {
     var body: some View {
         if let tabsCoordinator = store.flowFeatures[.tabs] {
             tabsCoordinator
-                .sheet(item: .binding(
-                    state: { store.destination?.sheet },
-                    with: store.handleSheetChanged)
+                .sheet(
+                    item: Binding(
+                        get: { store.destination?.sheet },
+                        set: { store.handleSheetChanged($0) }
+                    )
                 ) { sheet in
                     switch sheet {
                     case .auth:
@@ -24,9 +26,11 @@ struct RootCoordinator: View {
                         makeDestinationFeature()
                     }
                 }
-                .fullScreenCover(item: .binding(
-                    state: { store.destination?.fullscreenCover },
-                    with: store.handleFullscreenCoverChanged)
+                .fullScreenCover(
+                    item: Binding(
+                        get: { store.destination?.fullscreenCover },
+                        set: { store.handleFullscreenCoverChanged($0) }
+                    )
                 ) { destination in
                     switch destination {
                     case .onboarding:

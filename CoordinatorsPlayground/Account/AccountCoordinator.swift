@@ -12,7 +12,12 @@ struct AccountCoordinator: View {
     let makeFloatingStack: () -> AnyView
     
     var body: some View {
-        NavigationStack(path: .binding(state: { store.path }, with: store.handlePathChanged)) {
+        NavigationStack(
+            path: Binding(
+                get: { store.path },
+                set: { store.handlePathChanged($0) }
+            )
+        ) {
             makeRootFeature()
                 .navigationDestination(for: AccountCoordinatorStore.Path.self) { path in
                     switch path {
@@ -22,10 +27,11 @@ struct AccountCoordinator: View {
                 }
                 .navigationTitle("Account")
         }
-        .sheet(item: .binding(
-                    state: { store.destination?.sheet },
-                    with: store.handleSheetChanged
-                )
+        .sheet(
+            item: Binding(
+                get: { store.destination?.sheet },
+                set: { store.handleSheetChanged($0) }
+            )
         ) { sheet in
             switch sheet {
             case .help:

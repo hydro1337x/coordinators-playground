@@ -78,16 +78,10 @@ struct SettingsRootScreen: View {
 
 @MainActor
 class SettingsRootStore: ObservableObject {
-    @Published private(set) var activeTabs: [Tab] {
-        didSet {
-            onTabsChanged(activeTabs)
-        }
-    }
+    @Published private(set) var activeTabs: [Tab]
     @Published private(set) var selectedTab: Tab?
     @Published private(set) var selectedTabOrder: Int = 0
     @Published private(set) var theme: Theme = .light
-    
-    var onTabsChanged: ([Tab]) -> Void = unimplemented()
     
     private let themeService: SetThemeService & GetThemeService
     

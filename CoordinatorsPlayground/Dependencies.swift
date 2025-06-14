@@ -7,24 +7,6 @@
 
 import Foundation
 import SwiftUI
-
-final class RootRouterAdapter {
-    var onUnhandledRoute: (Route) async -> Bool = unimplemented(return: false)
-}
-
-final class TabsCoordinatorAdapter {
-    let activeTabs: [Tab] = [.home, .search, .settings]
-    var onScreenAPushed: () -> Void = unimplemented()
-    var onScreenAPopped: () -> Void = unimplemented()
-    var onTabsChanged: ([Tab]) -> Void = unimplemented()
-    
-    func handlePop(path: [HomeCoordinatorStore.Path]) {
-        if path.contains(.screenA) {
-            onScreenAPopped()
-        }
-    }
-}
-
 import Combine
 
 @MainActor

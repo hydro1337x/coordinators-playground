@@ -12,7 +12,7 @@ struct HomeCoordinator: View {
     
     var body: some View {
         NavigationStack(
-            path: .init(
+            path: Binding(
                 get: { store.path },
                 set: { store.handlePathChanged($0) }
             )
@@ -26,17 +26,16 @@ struct HomeCoordinator: View {
                 .toolbar(content: toolbarButton)
         }
         .sheet(
-            item: .binding(
-                state: { store.destination },
-                with: store.handleDestinationChanged
-            ),
-            content: { destination in
-                switch destination {
-                case .screenB:
-                    makeDestinatonFeature()
-                }
+            item: Binding(
+                get: { store.destination },
+                set: { store.handleDestinationChanged($0) }
+            )
+        ) { destination in
+            switch destination {
+            case .screenB:
+                makeDestinatonFeature()
             }
-        )
+        }
         .task {
             await store.bindObservers()
         }

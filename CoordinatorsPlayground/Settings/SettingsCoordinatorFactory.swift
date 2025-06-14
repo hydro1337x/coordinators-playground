@@ -18,9 +18,7 @@ struct DefaultSettingsCoordinatorFactory: SettingsCoordinatorFactory {
     
     func makeRootScreen() -> Feature {
         let store = SettingsRootStore(activeTabs: tabsCoordinatorAdapter.activeTabs, themeService: themeService)
-        store.onTabsChanged = {
-            tabsCoordinatorAdapter.onTabsChanged($0)
-        }
+        tabsCoordinatorAdapter.subscribe(to: store.$activeTabs)
         let view = SettingsRootScreen(store: store)
         return Feature(view: view, store: store)
     }

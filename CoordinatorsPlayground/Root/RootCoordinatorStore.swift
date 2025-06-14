@@ -26,7 +26,8 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
         destination: Destination? = nil,
         authStateService: AuthStateProvider,
         authService: AuthTokenLoginService,
-        factory: RootCoordinatorFactory, router: any Router<RootStep>,
+        factory: RootCoordinatorFactory,
+        router: any Router<RootStep>,
         restorer: any Restorer<RootState>
     ) {
         self.authStateService = authStateService
