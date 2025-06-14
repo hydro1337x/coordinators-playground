@@ -32,6 +32,7 @@ struct CoordinatorsPlaygroundApp: App {
 @MainActor
 final class AppStore: ObservableObject {
     @Published var currentTheme: Theme
+    private var didFinishLaunching = false
     
     let rootCoordinator: Feature
     let themeStore: ThemeStore
@@ -72,11 +73,18 @@ final class AppStore: ObservableObject {
         Task {
             await restoreState()
             await handleDeepLink()
+            didFinishLaunching = true
         }
     }
     
     func handleOnURLOpen(_ url: URL) {
         self.pendingURL = url
+        
+        if didFinishLaunching {
+            Task {
+                await handleDeepLink()
+            }
+        }
         /**
          Test via command:
          xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=base64EncodedString"
