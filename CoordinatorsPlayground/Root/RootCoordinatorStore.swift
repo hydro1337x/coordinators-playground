@@ -73,7 +73,7 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
     private func makeFeature(for flow: Flow) {
         switch flow {
         case .tabs:
-            let tabsCoordinator = factory.makeTabsCoordinator(
+            let mainTabsCoordinator = factory.makeMainTabsCoordinator(
                 onAccountButtonTapped: { [weak self] in
                     self?.present(destination: .sheet(.account))
                 },
@@ -82,7 +82,7 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
                 }
             )
             
-            flowFeatures[flow] = tabsCoordinator
+            flowFeatures[flow] = mainTabsCoordinator
         }
     }
     

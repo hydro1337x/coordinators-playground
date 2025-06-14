@@ -17,7 +17,7 @@ protocol HomeCoordinatorFactory {
 }
 
 struct DefaultHomeCoordinatorFactory: HomeCoordinatorFactory {
-    let tabsCoordinatorAdapter: TabsCoordinatorAdapter
+    let mainTabsCoordinatorAdapter: MainTabsCoordinatorAdapter
     
     func makeRootScreen(onButtonTap: @escaping () -> Void) -> Feature {
         let store = HomeRootStore()

@@ -14,11 +14,11 @@ protocol SettingsCoordinatorFactory {
 
 struct DefaultSettingsCoordinatorFactory: SettingsCoordinatorFactory {
     let themeService: UserDefaultsThemeService
-    let tabsCoordinatorAdapter: TabsCoordinatorAdapter
+    let mainTabsCoordinatorAdapter: MainTabsCoordinatorAdapter
     
     func makeRootScreen() -> Feature {
-        let store = SettingsRootStore(activeTabs: tabsCoordinatorAdapter.activeTabs, themeService: themeService)
-        tabsCoordinatorAdapter.subscribe(to: store.$activeTabs)
+        let store = SettingsRootStore(activeTabs: mainTabsCoordinatorAdapter.activeTabs, themeService: themeService)
+        mainTabsCoordinatorAdapter.subscribe(to: store.$activeTabs)
         let view = SettingsRootScreen(store: store)
         return Feature(view: view, store: store)
     }

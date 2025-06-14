@@ -1,5 +1,5 @@
 //
-//  DefaultTabsCoordinatorFactory.swift
+//  MainTabsCoordinatorFactory.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 25.05.2025..
@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-protocol TabsCoordinatorFactory {
+protocol MainTabsCoordinatorFactory {
     func makeHomeCoordinator(
         onAccountButtonTapped: @escaping () -> Void,
         onLoginButtonTapped: @escaping () -> Void
@@ -22,12 +22,12 @@ protocol TabsCoordinatorFactory {
     func makeSettingsCoordinator() -> Feature
 }
 
-struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
+struct DefaultMainTabsCoordinatorFactory: MainTabsCoordinatorFactory {
     let authStateService: AuthStateStreamService
     let homeCoordinatorFactory: DefaultHomeCoordinatorFactory
     let settingsCoordinatorFactory: DefaultSettingsCoordinatorFactory
     let routerAdapter: RootRouterAdapter
-    let tabsCoordinatorAdapter: TabsCoordinatorAdapter
+    let mainTabsCoordinatorAdapter: MainTabsCoordinatorAdapter
     let navigationObserver: NavigationObserver
     
     func makeHomeCoordinator(
@@ -45,7 +45,7 @@ struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
         )
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
-        tabsCoordinatorAdapter.subscribe(to: store.$path)
+        mainTabsCoordinatorAdapter.subscribe(to: store.$path)
         
         navigationObserver.observe(observable: store, path: \.$path, destination: \.$destination)
         

@@ -1,5 +1,5 @@
 //
-//  TabsCoordinatorStore.swift
+//  MainTabsCoordinatorStore.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 09.06.2025..
@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-class TabsCoordinatorStore: ObservableObject, TabCoordinator {
+class MainTabsCoordinatorStore: ObservableObject, TabCoordinator {
     @Published private(set) var tab: Tab
     @Published private(set) var isTabBarVisible: Bool = true
     @Published private(set) var activeTabs: [Tab]
@@ -19,11 +19,11 @@ class TabsCoordinatorStore: ObservableObject, TabCoordinator {
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
     
-    private let factory: TabsCoordinatorFactory
+    private let factory: MainTabsCoordinatorFactory
     let router: any Router<TabsStep>
     let restorer: any Restorer<TabsState>
     
-    init(selectedTab: Tab, activeTabs: [Tab], factory: TabsCoordinatorFactory, router: any Router<TabsStep>, restorer: any Restorer<TabsState>) {
+    init(selectedTab: Tab, activeTabs: [Tab], factory: MainTabsCoordinatorFactory, router: any Router<TabsStep>, restorer: any Restorer<TabsState>) {
         self.factory = factory
         self.router = router
         self.restorer = restorer
@@ -95,7 +95,7 @@ enum Tab: CaseIterable, Codable {
     case settings
 }
 
-extension TabsCoordinatorStore: Routable {
+extension MainTabsCoordinatorStore: Routable {
     func handle(step: TabsStep) async {
         switch step {
         case .change(let tab):
@@ -111,7 +111,7 @@ extension TabsCoordinatorStore: Routable {
     }
 }
 
-extension TabsCoordinatorStore: Restorable {
+extension MainTabsCoordinatorStore: Restorable {
     func captureState() async -> TabsState {
         return .init(tab: tab)
     }
@@ -122,7 +122,7 @@ extension TabsCoordinatorStore: Restorable {
 }
 
 struct TabsState: Codable {
-    let tab: TabsCoordinatorStore.Tab
+    let tab: MainTabsCoordinatorStore.Tab
 }
 
 enum TabsStep: Decodable {

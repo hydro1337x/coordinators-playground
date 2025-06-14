@@ -1,5 +1,5 @@
 //
-//  TabsCoordinator.swift
+//  MainTabsCoordinator.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 10.05.2025..
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct TabsCoordinator: View {
-    @ObservedObject var store: TabsCoordinatorStore
+struct MainTabsCoordinator: View {
+    @ObservedObject var store: MainTabsCoordinatorStore
     var makeFloatingStack: () -> AnyView
     
     var body: some View {

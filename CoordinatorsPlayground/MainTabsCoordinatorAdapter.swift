@@ -1,5 +1,5 @@
 //
-//  TabsCoordinatorAdapter.swift
+//  MainTabsCoordinatorAdapter.swift
 //  CoordinatorsPlayground
 //
 //  Created by Benjamin Macanovic on 15.06.2025..
@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-final class TabsCoordinatorAdapter {
+final class MainTabsCoordinatorAdapter {
     let activeTabs: [Tab] = [.home, .search, .settings]
     var onHideTabBar: () -> Void = unimplemented()
     var onShowTabBar: () -> Void = unimplemented()

@@ -13,18 +13,18 @@ protocol RootCoordinatorFactory {
     func makeAuthCoordinator(onFinished: @escaping () -> Void) -> Feature
     func makeAccountCoordinator(onFinished: @escaping () -> Void) -> Feature
     func makeOnboardingCoordinator(onFinished: @escaping () -> Void) -> Feature
-    func makeTabsCoordinator(onAccountButtonTapped: @escaping () -> Void, onLoginButtonTapped: @escaping () -> Void) -> Feature
+    func makeMainTabsCoordinator(onAccountButtonTapped: @escaping () -> Void, onLoginButtonTapped: @escaping () -> Void) -> Feature
 }
 
 struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
     let authStateService: AuthStateStreamService
     let authService: AuthService
     let accountCoordinatorFactory: DefaultAccountCoordinatorFactory
-    let tabsCoordinatorFactory: DefaultTabsCoordinatorFactory
+    let mainTabsCoordinatorFactory: DefaultMainTabsCoordinatorFactory
     let themeService: UserDefaultsThemeService
     let routerAdapter: RootRouterAdapter
     let floatingStackStore: FloatingStackStore
-    let tabsCoordinatesAdapter: TabsCoordinatorAdapter
+    let mainTabsCoordinatorAdapter: MainTabsCoordinatorAdapter
     let navigationObserver: NavigationObserver
     
     func makeAuthCoordinator(onFinished: @escaping () -> Void) -> Feature {
@@ -62,24 +62,24 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
         return Feature(view: view, store: store)
     }
     
-    func makeTabsCoordinator(onAccountButtonTapped: @escaping () -> Void, onLoginButtonTapped: @escaping () -> Void) -> Feature {
+    func makeMainTabsCoordinator(onAccountButtonTapped: @escaping () -> Void, onLoginButtonTapped: @escaping () -> Void) -> Feature {
         let router = DefaultRouter<TabsStep>()
         let restorer = DefaultRestorer<TabsState>()
         router.onUnhandledRoute = routerAdapter.onUnhandledRoute
-        let store = TabsCoordinatorStore(
+        let store = MainTabsCoordinatorStore(
             selectedTab: .search,
-            activeTabs: tabsCoordinatesAdapter.activeTabs,
-            factory: tabsCoordinatorFactory,
+            activeTabs: mainTabsCoordinatorAdapter.activeTabs,
+            factory: mainTabsCoordinatorFactory,
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
-        tabsCoordinatesAdapter.onHideTabBar = store.hideTabBar
-        tabsCoordinatesAdapter.onShowTabBar = store.showTabBar
-        tabsCoordinatesAdapter.onActiveTabsChanged = store.setActiveTabs
+        mainTabsCoordinatorAdapter.onHideTabBar = store.hideTabBar
+        mainTabsCoordinatorAdapter.onShowTabBar = store.showTabBar
+        mainTabsCoordinatorAdapter.onActiveTabsChanged = store.setActiveTabs
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
         navigationObserver.observe(observable: store, state: \.$tab)
-        let view = TabsCoordinator(
+        let view = MainTabsCoordinator(
             store: store,
             makeFloatingStack: { [floatingStackStore] in
                 AnyView(FloatingStack(store: floatingStackStore))

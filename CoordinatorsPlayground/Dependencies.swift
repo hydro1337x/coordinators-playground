@@ -12,7 +12,7 @@ import Combine
 @MainActor
 final class Dependencies {
     lazy var navigationObserver = NavigationObserver(scheduler: RunLoop.main.eraseToAnyScheduler())
-    lazy var tabsCoordinatorAdapter = TabsCoordinatorAdapter()
+    lazy var mainTabsCoordinatorAdapter = MainTabsCoordinatorAdapter()
     lazy var rootRouterAdapter = RootRouterAdapter()
     lazy var themeService = UserDefaultsThemeService()
     lazy var themeStore = ThemeStore(themeService: themeService)
@@ -24,25 +24,25 @@ final class Dependencies {
         topVisibleState: navigationObserver.$topVisibleState.eraseToAnyPublisher()
     )
     lazy var accountCoordinatorFactory = DefaultAccountCoordinatorFactory(authService: authService)
-    lazy var settingsCoordinatorFactory = DefaultSettingsCoordinatorFactory(themeService: themeService, tabsCoordinatorAdapter: tabsCoordinatorAdapter)
-    lazy var homeCoordinatorFactory = DefaultHomeCoordinatorFactory(tabsCoordinatorAdapter: tabsCoordinatorAdapter)
-    lazy var tabsCoordinatorFactory = DefaultTabsCoordinatorFactory(
+    lazy var settingsCoordinatorFactory = DefaultSettingsCoordinatorFactory(themeService: themeService, mainTabsCoordinatorAdapter: mainTabsCoordinatorAdapter)
+    lazy var homeCoordinatorFactory = DefaultHomeCoordinatorFactory(mainTabsCoordinatorAdapter: mainTabsCoordinatorAdapter)
+    lazy var mainTabsCoordinatorFactory = DefaultMainTabsCoordinatorFactory(
         authStateService: authStateService,
         homeCoordinatorFactory: homeCoordinatorFactory,
         settingsCoordinatorFactory: settingsCoordinatorFactory,
         routerAdapter: rootRouterAdapter,
-        tabsCoordinatorAdapter: tabsCoordinatorAdapter,
+        mainTabsCoordinatorAdapter: mainTabsCoordinatorAdapter,
         navigationObserver: navigationObserver
     )
     lazy var rootCoordinatorFactory = DefaultRootCoordinatorFactory(
         authStateService: authStateService,
         authService: authService,
         accountCoordinatorFactory: accountCoordinatorFactory,
-        tabsCoordinatorFactory: tabsCoordinatorFactory,
+        mainTabsCoordinatorFactory: mainTabsCoordinatorFactory,
         themeService: themeService,
         routerAdapter: rootRouterAdapter,
         floatingStackStore: floatingStackStore,
-        tabsCoordinatesAdapter: tabsCoordinatorAdapter,
+        mainTabsCoordinatorAdapter: mainTabsCoordinatorAdapter,
         navigationObserver: navigationObserver
     )
     

@@ -11,8 +11,8 @@ struct RootCoordinator: View {
     @ObservedObject var store: RootCoordinatorStore
     
     var body: some View {
-        if let tabsCoordinator = store.flowFeatures[.tabs] {
-            tabsCoordinator
+        if let mainTabsCoordinator = store.flowFeatures[.tabs] {
+            mainTabsCoordinator
                 .sheet(
                     item: Binding(
                         get: { store.destination?.sheet },
