@@ -33,3 +33,21 @@ protocol FlowCoordinator: Coordinator {
     var flow: Flow { get }
     var flowFeatures: [Flow: Feature] { get }
 }
+
+extension StackCoordinator {
+    var pathFeatureValues: [Feature] {
+        Array(pathFeatures.values)
+    }
+}
+
+extension TabCoordinator {
+    var tabFeatureValues: [Feature] {
+        Array(tabFeatures.values)
+    }
+}
+
+extension FlowCoordinator {
+    var flowFeatureValues: [Feature] {
+        Array(flowFeatures.values)
+    }
+}

@@ -6,11 +6,13 @@
 //
 
 import Foundation
+import SwiftUI
 
 @MainActor
 class TabsCoordinatorStore: ObservableObject, TabCoordinator {
     @Published private(set) var tab: Tab
     @Published private(set) var isTabBarVisible: Bool = true
+    @Published private(set) var activeTabs: [Tab]
     
     private(set) var tabFeatures: [Tab: Feature] = [:]
     
@@ -21,20 +23,17 @@ class TabsCoordinatorStore: ObservableObject, TabCoordinator {
     let router: any Router<TabsStep>
     let restorer: any Restorer<TabsState>
     
-    init(selectedTab: Tab, factory: TabsCoordinatorFactory, router: any Router<TabsStep>, restorer: any Restorer<TabsState>) {
+    init(selectedTab: Tab, activeTabs: [Tab], factory: TabsCoordinatorFactory, router: any Router<TabsStep>, restorer: any Restorer<TabsState>) {
         self.factory = factory
         self.router = router
         self.restorer = restorer
         self.tab = .search
+        self.activeTabs = activeTabs
         
-        Tab.allCases.forEach { makeFeature(for: $0) }
+        activeTabs.forEach { makeFeature(for: $0) }
         
         router.register(routable: self)
-        
-        restorer.setup(using: self, childRestorables: { [weak self] in
-            guard let self else { return [] }
-            return self.tabFeatures.values.compactMap { $0.cast() }
-        })
+        restorer.register(restorable: self)
     }
     
     deinit {
@@ -63,6 +62,9 @@ class TabsCoordinatorStore: ObservableObject, TabCoordinator {
                 }
             )
             tabFeatures[tab] = feature
+        case .settings:
+            let feature = factory.makeSettingsCoordinator()
+            tabFeatures[tab] = feature
         }
     }
     
@@ -78,16 +80,19 @@ class TabsCoordinatorStore: ObservableObject, TabCoordinator {
         self.tab = tab
     }
     
+    func setActiveTabs(_ tabs: [Tab]) {
+        self.activeTabs = tabs
+    }
+    
     private func show(tab: Tab) {
         self.tab = tab
     }
 }
 
-extension TabsCoordinatorStore {
-    enum Tab: CaseIterable, Codable {
-        case home
-        case search
-    }
+enum Tab: CaseIterable, Codable {
+    case home
+    case search
+    case settings
 }
 
 extension TabsCoordinatorStore: Routable {
@@ -99,6 +104,8 @@ extension TabsCoordinatorStore: Routable {
                 show(tab: .home)
             case .search:
                 show(tab: .search)
+            case .settings:
+                show(tab: .settings)
             }
         }
     }
@@ -122,6 +129,7 @@ enum TabsStep: Decodable {
     enum Tab: Decodable {
         case home
         case search
+        case settings
     }
     
     case change(tab: Tab)

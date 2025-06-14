@@ -16,12 +16,9 @@ struct LoggingRestorerDecorator<State: Codable>: Restorer {
         self.typeName = String(describing: State.self)
     }
 
-    func setup(
-        using restorable: any Restorable<State>,
-        childRestorables: @escaping () -> [any Restorable]
-    ) {
+    func register(restorable: any Restorable<State>) {
         print("🛠️ [Restorer:\(typeName)] setup called.")
-        wrapped.setup(using: restorable, childRestorables: childRestorables)
+        wrapped.register(restorable: restorable)
     }
 
     func restore(from snapshot: RestorableSnapshot) async -> Bool {

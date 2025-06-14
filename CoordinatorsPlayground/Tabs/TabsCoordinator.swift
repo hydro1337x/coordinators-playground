@@ -12,25 +12,22 @@ struct TabsCoordinator: View {
     var makeFloatingStack: () -> AnyView
     
     var body: some View {
-        TabView(selection: .binding(
-            state: { store.tab },
-            with: store.handleTabChanged)
+        TabView(
+            selection:
+                Binding(
+                    get: { store.tab },
+                    set: { store.handleTabChanged($0) }
+                )
         ) {
             Group {
-                if let tabFeature = store.tabFeatures[.home] {
-                    tabFeature
-                        .tag(TabsCoordinatorStore.Tab.home)
-                        .tabItem {
-                            Image(systemName: "list.bullet")
-                        }
-                }
-                
-                if let tabFeature = store.tabFeatures[.search] {
-                    tabFeature
-                        .tag(TabsCoordinatorStore.Tab.search)
-                        .tabItem {
-                            Image(systemName: "paperplane")
-                        }
+                ForEach(store.activeTabs, id: \.self) { tab in
+                    if let tabFeature = store.tabFeatures[tab] {
+                        tabFeature
+                            .tag(tab)
+                            .tabItem {
+                                tab.image
+                            }
+                    }
                 }
             }
             .overlay {
@@ -49,4 +46,15 @@ struct TabsCoordinator: View {
     }
 }
 
-
+extension Tab {
+    var image: Image {
+        switch self {
+        case .home:
+            return Image(systemName: "house")
+        case .search:
+            return Image(systemName: "magnifyingglass")
+        case .settings:
+            return Image(systemName: "gearshape")
+        }
+    }
+}

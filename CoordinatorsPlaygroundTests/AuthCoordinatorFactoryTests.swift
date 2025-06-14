@@ -14,7 +14,7 @@ struct AuthCoordinatorFactoryTests {
     let sut = DefaultAccountCoordinatorFactory()
     
     @Test func test_makeAccountDetails() async throws {
-        let feature = sut.makeAccountDetails()
+        let feature = sut.makeDetailsScreen()
         
         #expect(feature.cast(to: AccountDetailsStore.self) != nil)
         #expect(String(describing: feature.underlyingView).contains("AccountDetailsScreen"))

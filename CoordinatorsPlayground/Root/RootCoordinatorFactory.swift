@@ -68,12 +68,14 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
         router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         let store = TabsCoordinatorStore(
             selectedTab: .search,
+            activeTabs: tabsCoordinatesAdapter.activeTabs,
             factory: tabsCoordinatorFactory,
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         tabsCoordinatesAdapter.onScreenAPushed = store.hideTabBar
         tabsCoordinatesAdapter.onScreenAPopped = store.showTabBar
+        tabsCoordinatesAdapter.onTabsChanged = store.setActiveTabs
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
         navigationObserver.observe(observable: store, state: \.$tab)

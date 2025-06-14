@@ -20,12 +20,11 @@ final class DefaultRestorer<S: Codable>: Restorer {
         childRestorables?().map { $0.restorer } ?? []
     }
 
-    func setup(
-        using restorable: any Restorable<State>,
-        childRestorables: @escaping () -> [any Restorable]
-    ) {
+    func register(restorable: any Restorable<State>) {
         self.restorable = restorable
-        self.childRestorables = childRestorables
+        self.childRestorables = { [weak restorable] in
+            restorable?.childRestorables() ?? []
+        }
     }
 
     func restore(from snapshot: RestorableSnapshot) async -> Bool {
@@ -78,5 +77,31 @@ final class DefaultRestorer<S: Codable>: Restorer {
             print("⚠️ Failed to encode snapshot for \(State.self): \(error)")
             return RestorableSnapshot(state: Data(), children: [])
         }
+    }
+}
+
+extension Restorable {
+    func childRestorables() -> [any Restorable] {
+        var childFeatures: [Feature] = []
+        
+        if let modalCoordinator = self as? (any ModalCoordinator), let feature = modalCoordinator.destinationFeature {
+            childFeatures.append(feature)
+        }
+        
+        if let stackCoordnator = self as? (any StackCoordinator) {
+            childFeatures.append(contentsOf: stackCoordnator.pathFeatureValues)
+        }
+        
+        if let tabCoordinator = self as? (any TabCoordinator) {
+            childFeatures.append(contentsOf: tabCoordinator.tabFeatureValues)
+        }
+        
+        if let flowCoordinator = self as? (any FlowCoordinator) {
+            childFeatures.append(contentsOf: flowCoordinator.flowFeatureValues)
+        }
+        
+        let childRoutables: [any Restorable] = childFeatures.compactMap { $0.cast() }
+        
+        return childRoutables
     }
 }

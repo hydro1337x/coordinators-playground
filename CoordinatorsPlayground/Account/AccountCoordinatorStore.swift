@@ -27,7 +27,7 @@ class AccountCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordina
         self.router = router
         self.restorer = restorer
         
-        rootFeature = factory.makeAccountRoot(
+        rootFeature = factory.makeRootScreen(
             onDetailsButtonTapped: { [weak self] in
                 self?.push(path: .details)
             },
@@ -40,10 +40,7 @@ class AccountCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordina
         )
         
         router.register(routable: self)
-        
-        restorer.setup(using: self, childRestorables: {
-            []
-        })
+        restorer.register(restorable: self)
     }
     
     deinit {
@@ -73,7 +70,7 @@ class AccountCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordina
         case .sheet(let sheet):
             switch sheet {
             case .help:
-                let feature = factory.makeAccountHelp(onDismiss: { [weak self] in
+                let feature = factory.makeHelpScreen(onDismiss: { [weak self] in
                     self?.dismiss()
                 })
                 destinationFeature = feature
@@ -86,7 +83,7 @@ class AccountCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordina
         
         switch path {
         case .details:
-            pathFeatures[path] = factory.makeAccountDetails()
+            pathFeatures[path] = factory.makeDetailsScreen()
         }
     }
     

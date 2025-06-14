@@ -18,11 +18,14 @@ protocol TabsCoordinatorFactory {
         onAccountButtonTapped: @escaping () -> Void,
         onLoginButtonTapped: @escaping () -> Void
     ) -> Feature
+    
+    func makeSettingsCoordinator() -> Feature
 }
 
 struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
     let authStateService: AuthStateStreamService
     let homeCoordinatorFactory: DefaultHomeCoordinatorFactory
+    let settingsCoordinatorFactory: DefaultSettingsCoordinatorFactory
     let routerAdapter: RootRouterAdapter
     let tabsCoordinatorAdapter: TabsCoordinatorAdapter
     let navigationObserver: NavigationObserver
@@ -64,6 +67,12 @@ struct DefaultTabsCoordinatorFactory: TabsCoordinatorFactory {
         router.onUnhandledRoute = routerAdapter.onUnhandledRoute
         navigationObserver.observe(observable: store, state: \.$tab)
         let view = SearchCoordinator(store: store)
+        return Feature(view: view, store: store)
+    }
+    
+    func makeSettingsCoordinator() -> Feature {
+        let store = SettingsCoordinatorStore(factory: settingsCoordinatorFactory)
+        let view = SettingsCoordinator(store: store)
         return Feature(view: view, store: store)
     }
 }

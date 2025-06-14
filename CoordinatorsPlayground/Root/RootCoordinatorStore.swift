@@ -23,7 +23,7 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
     
     init(
         flow: Flow,
-        destination: Destination = .fullscreenCover(.onboarding),
+        destination: Destination? = nil,
         authStateService: AuthStateProvider,
         authService: AuthTokenLoginService,
         factory: RootCoordinatorFactory, router: any Router<RootStep>,
@@ -37,22 +37,14 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
         self.flow = flow
         self.destination = destination
         
-        makeFeature(for: destination)
+        if let destination {
+            makeFeature(for: destination)
+        }
         makeFeature(for: flow)
         
         // MARK: - abstract with makeFeature(for flow:)
         router.register(routable: self)
-        
-        restorer.setup(using: self, childRestorables: { [weak self] in
-            guard let self else { return [] }
-            return flowFeatures
-                .values
-                .map { $0 }
-                .reduce(into: [destinationFeature]) { partialResult, next in
-                    partialResult.append(next)
-                }
-                .compactMap { $0?.cast() }
-        })
+        restorer.register(restorable: self)
     }
     
     deinit {

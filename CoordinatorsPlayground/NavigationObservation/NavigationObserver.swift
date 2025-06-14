@@ -46,7 +46,6 @@ class NavigationObserver {
         
         navigationChangedSubject
             .receive(on: scheduler)
-            .removeDuplicates()
             .map { _ in () }
             .debounce(for: .milliseconds(0), scheduler: scheduler)
             .sink { [weak self] in

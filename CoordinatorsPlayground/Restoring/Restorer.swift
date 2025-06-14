@@ -12,10 +12,7 @@ protocol Restorer<State> {
     associatedtype State: Codable
 
     /// Set up this restorer with its associated restorable and child restorables.
-    func setup(
-        using restorable: any Restorable<State>,
-        childRestorables: @escaping () -> [any Restorable]
-    )
+    func register(restorable: any Restorable<State>)
 
     /// Attempt to restore this coordinator (and children) from the given snapshot.
     func restore(from snapshot: RestorableSnapshot) async -> Bool

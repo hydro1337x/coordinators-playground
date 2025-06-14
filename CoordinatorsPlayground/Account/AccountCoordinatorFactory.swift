@@ -9,25 +9,24 @@ import SwiftUI
 
 @MainActor
 protocol AccountCoordinatorFactory {
-    func makeAccountRoot(
+    func makeRootScreen(
         onDetailsButtonTapped: @escaping () -> Void,
         onHelpButtonTapped: @escaping () -> Void,
         onLogoutFinished: @escaping () -> Void
     ) -> Feature
-    func makeAccountDetails() -> Feature
-    func makeAccountHelp(onDismiss: @escaping () -> Void) -> Feature
+    func makeDetailsScreen() -> Feature
+    func makeHelpScreen(onDismiss: @escaping () -> Void) -> Feature
 }
 
 struct DefaultAccountCoordinatorFactory: AccountCoordinatorFactory {
     let authService: AuthService
-    let themeService: UserDefaultsThemeService
     
-    func makeAccountRoot(
+    func makeRootScreen(
         onDetailsButtonTapped: @escaping () -> Void,
         onHelpButtonTapped: @escaping () -> Void,
         onLogoutFinished: @escaping () -> Void
     ) -> Feature {
-        let store = AccountRootStore(logoutService: authService, themeService: themeService)
+        let store = AccountRootStore(logoutService: authService)
         store.onDetailsButtonTapped = onDetailsButtonTapped
         store.onHelpButtonTapped = onHelpButtonTapped
         store.onLogoutFinished = onLogoutFinished
@@ -35,13 +34,13 @@ struct DefaultAccountCoordinatorFactory: AccountCoordinatorFactory {
         return Feature(view: view, store: store)
     }
     
-    func makeAccountDetails() -> Feature {
+    func makeDetailsScreen() -> Feature {
         let store = AccountDetailsStore()
         let view = AccountDetailsScreen(store: store).navigationTitle(store.title)
         return Feature(view: view, store: store)
     }
     
-    func makeAccountHelp(onDismiss: @escaping () -> Void) -> Feature {
+    func makeHelpScreen(onDismiss: @escaping () -> Void) -> Feature {
         let store = AccountHelpStore()
         store.onDismiss = onDismiss
         let view = AccountHelpScreen(store: store).navigationTitle(store.title)

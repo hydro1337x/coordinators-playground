@@ -10,7 +10,7 @@ import SwiftUI
 
 @MainActor
 protocol HomeCoordinatorFactory {
-    func makeHomeScreen(onButtonTap: @escaping () -> Void) -> Feature
+    func makeRootScreen(onButtonTap: @escaping () -> Void) -> Feature
     func makeScreenA(onButtonTap: @escaping () -> Void) -> Feature
     func makeScreenB(id: Int, onPushClone: @escaping (Int) -> Void, onPushNext: @escaping () -> Void) -> Feature
     func makeScreenC(onBackButtonTapped: @escaping () -> Void) -> Feature
@@ -19,7 +19,7 @@ protocol HomeCoordinatorFactory {
 struct DefaultHomeCoordinatorFactory: HomeCoordinatorFactory {
     let tabsCoordinatorAdapter: TabsCoordinatorAdapter
     
-    func makeHomeScreen(onButtonTap: @escaping () -> Void) -> Feature {
+    func makeRootScreen(onButtonTap: @escaping () -> Void) -> Feature {
         let store = HomeRootStore()
         store.onButtonTap = {
             onButtonTap()

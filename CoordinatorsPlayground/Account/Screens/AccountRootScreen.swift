@@ -22,32 +22,12 @@ struct AccountRootScreen: View {
                 }
             }
             
-            Section("Theme") {
-                Picker(
-                    selection: Binding(
-                        get: { store.theme },
-                        set: { store.handleThemeChanged($0) }
-                    ),
-                    content: {
-                        Text("Light")
-                            .tag(Theme.light)
-                        Text("Dark")
-                            .tag(Theme.dark)
-                    },
-                    label: {
-                        Text("Selected")
-                    }
-                )
-                .pickerStyle(.menu)
-            }
-            
             Section {
                 Button("Logout") {
                     Task { await store.handleLogoutButtonTapped() }
                 }
             }
         }
-        .onAppear(perform: store.handleOnAppear)
         .overlay {
             VStack {
                 Spacer()
@@ -66,42 +46,14 @@ struct AccountRootScreen: View {
 
 @MainActor
 class AccountRootStore: ObservableObject {
-    @Published private(set) var theme: Theme = .light
-    
     private let logoutService: LogoutService
-    private let themeService: SetThemeService & GetThemeService
     
     var onDetailsButtonTapped: () -> Void = unimplemented()
     var onHelpButtonTapped: () -> Void = unimplemented()
     var onLogoutFinished: () -> Void = unimplemented()
     
-    init(
-        logoutService: LogoutService,
-        themeService: SetThemeService & GetThemeService
-    ) {
+    init(logoutService: LogoutService) {
         self.logoutService = logoutService
-        self.themeService = themeService
-    }
-    
-    func handleOnAppear() {
-        Task {
-            if let currentTheme = await themeService.getTheme() {
-                self.theme = currentTheme
-            }
-        }
-    }
-    
-    func handleThemeChanged(_ theme: Theme) {
-        self.theme = theme
-        
-        Task {
-            switch theme {
-            case .light:
-                await handleLightThemeButtonTapped()
-            case .dark:
-                await handleDarkThemeButtonTapped()
-            }
-        }
     }
     
     func handleDetailsButtonTapped() {
@@ -110,14 +62,6 @@ class AccountRootStore: ObservableObject {
     
     func handleHelpButtonTapped() {
         onHelpButtonTapped()
-    }
-    
-    func handleLightThemeButtonTapped() async {
-        await themeService.set(theme: .light)
-    }
-    
-    func handleDarkThemeButtonTapped() async {
-        await themeService.set(theme: .dark)
     }
     
     func handleLogoutButtonTapped() async {

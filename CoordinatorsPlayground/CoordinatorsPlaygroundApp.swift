@@ -37,6 +37,8 @@ final class AppStore: ObservableObject {
     let themeStore: ThemeStore
     let snapshotService: SaveRestorableSnapshotService & RetrieveRestorableSnapshotService
     
+    private var pendingURL: URL?
+    
     init(
         makeRootFeature: () -> Feature,
         themeStore: ThemeStore,
@@ -66,32 +68,39 @@ final class AppStore: ObservableObject {
     func handleOnFirstAppear() {
         bind()
         themeStore.handleOnFirstAppear()
-        restoreState()
+        
+        Task {
+            await restoreState()
+            await handleDeepLink()
+        }
     }
     
     func handleOnURLOpen(_ url: URL) {
+        self.pendingURL = url
         /**
          Test via command:
          xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=base64EncodedString"
          */
-        Task {
-            guard
-                let route = DeepLinkParser.parse(url),
-                let restorable: any Routable = rootCoordinator.cast()
-            else { return }
-            
-            _ = await restorable.router.handle(route: route)
-        }
     }
     
-    private func restoreState() {
-        Task {
-            guard
-                let snapshot = await snapshotService.retrieveSnapshot(),
-                let restorable: any Restorable = rootCoordinator.cast()
-            else { return }
-            _ = await restorable.restorer.restore(from: snapshot)
-        }
+    private func handleDeepLink() async {
+        guard
+            let pendingURL,
+            let route = DeepLinkParser.parse(pendingURL),
+            let restorable: any Routable = rootCoordinator.cast()
+        else { return }
+        
+        _ = await restorable.router.handle(route: route)
+        
+        self.pendingURL = nil
+    }
+    
+    private func restoreState() async {
+        guard
+            let snapshot = await snapshotService.retrieveSnapshot(),
+            let restorable: any Restorable = rootCoordinator.cast()
+        else { return }
+        _ = await restorable.restorer.restore(from: snapshot)
     }
     
     private func saveState() {

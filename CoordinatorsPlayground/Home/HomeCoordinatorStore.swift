@@ -31,22 +31,12 @@ class HomeCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordinator
         self.factory = factory
         self.router = router
         self.restorer = restorer
-        self.rootFeature = factory.makeHomeScreen(onButtonTap: { [weak self] in
+        self.rootFeature = factory.makeRootScreen(onButtonTap: { [weak self] in
             self?.push(path: .screenA)
         })
         
         router.register(routable: self)
-        
-        restorer.setup(using: self, childRestorables: { [weak self] in
-            guard let self else { return [] }
-            return pathFeatures
-                .values
-                .map { $0 }
-                .reduce(into: [destinationFeature]) { partialResult, next in
-                    partialResult.append(next)
-                }
-                .compactMap { $0?.cast() }
-        })
+        restorer.register(restorable: self)
     }
     
     deinit {

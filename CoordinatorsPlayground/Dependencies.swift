@@ -13,8 +13,10 @@ final class RootRouterAdapter {
 }
 
 final class TabsCoordinatorAdapter {
+    let activeTabs: [Tab] = [.home, .search, .settings]
     var onScreenAPushed: () -> Void = unimplemented()
     var onScreenAPopped: () -> Void = unimplemented()
+    var onTabsChanged: ([Tab]) -> Void = unimplemented()
     
     func handlePop(path: [HomeCoordinatorStore.Path]) {
         if path.contains(.screenA) {
@@ -39,11 +41,13 @@ final class Dependencies {
         clock: ContinuousClock(),
         topVisibleState: navigationObserver.$topVisibleState.eraseToAnyPublisher()
     )
-    lazy var accountCoordinatorFactory = DefaultAccountCoordinatorFactory(authService: authService, themeService: themeService)
+    lazy var accountCoordinatorFactory = DefaultAccountCoordinatorFactory(authService: authService)
+    lazy var settingsCoordinatorFactory = DefaultSettingsCoordinatorFactory(themeService: themeService, tabsCoordinatorAdapter: tabsCoordinatorAdapter)
     lazy var homeCoordinatorFactory = DefaultHomeCoordinatorFactory(tabsCoordinatorAdapter: tabsCoordinatorAdapter)
     lazy var tabsCoordinatorFactory = DefaultTabsCoordinatorFactory(
         authStateService: authStateService,
         homeCoordinatorFactory: homeCoordinatorFactory,
+        settingsCoordinatorFactory: settingsCoordinatorFactory,
         routerAdapter: rootRouterAdapter,
         tabsCoordinatorAdapter: tabsCoordinatorAdapter,
         navigationObserver: navigationObserver

@@ -97,21 +97,3 @@ extension Routable {
         return childRoutables
     }
 }
-
-private extension StackCoordinator {
-    var pathFeatureValues: [Feature] {
-        Array(pathFeatures.values)
-    }
-}
-
-private extension TabCoordinator {
-    var tabFeatureValues: [Feature] {
-        Array(tabFeatures.values)
-    }
-}
-
-private extension FlowCoordinator {
-    var flowFeatureValues: [Feature] {
-        Array(flowFeatures.values)
-    }
-}
