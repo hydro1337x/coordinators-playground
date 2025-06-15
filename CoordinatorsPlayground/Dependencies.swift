@@ -11,6 +11,7 @@ import Combine
 
 @MainActor
 final class Dependencies {
+    lazy var rootCoordinatorAdapter = RootCoordinatorAdapter()
     lazy var navigationObserver = NavigationObserver(scheduler: RunLoop.main.eraseToAnyScheduler())
     lazy var mainTabsCoordinatorAdapter = MainTabsCoordinatorAdapter()
     lazy var rootRouterAdapter = RootRouterAdapter()
@@ -24,7 +25,7 @@ final class Dependencies {
         topVisibleState: navigationObserver.$topVisibleState.eraseToAnyPublisher()
     )
     lazy var accountCoordinatorFactory = DefaultAccountCoordinatorFactory(authService: authService)
-    lazy var settingsCoordinatorFactory = DefaultSettingsCoordinatorFactory(themeService: themeService, mainTabsCoordinatorAdapter: mainTabsCoordinatorAdapter)
+    lazy var settingsCoordinatorFactory = DefaultSettingsCoordinatorFactory(themeService: themeService, mainTabsCoordinatorAdapter: mainTabsCoordinatorAdapter, rootCoordinatorAdapter: rootCoordinatorAdapter)
     lazy var homeCoordinatorFactory = DefaultHomeCoordinatorFactory(mainTabsCoordinatorAdapter: mainTabsCoordinatorAdapter)
     lazy var mainTabsCoordinatorFactory = DefaultMainTabsCoordinatorFactory(
         authStateService: authStateService,
@@ -60,6 +61,7 @@ final class Dependencies {
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
+        rootCoordinatorAdapter.onReachabilityChanged = store.setReachability(isReachable:)
         navigationObserver.register(root: store)
         navigationObserver.observe(observable: store, flow: \.$flow, destination: \.$destination)
         let view = RootCoordinator(

@@ -71,6 +71,16 @@ struct SettingsRootScreen: View {
                     .pickerStyle(.menu)
                 }
             }
+            
+            Section("Debug") {
+                Toggle(
+                    "Network Reachable",
+                    isOn: Binding(
+                        get: { store.isNetworkReachable },
+                        set: { store.handleIsNetworkReachableChanged($0) }
+                    )
+                )
+            }
         }
         .onAppear(perform: store.handleOnAppear)
     }
@@ -82,6 +92,7 @@ class SettingsRootStore: ObservableObject {
     @Published private(set) var selectedTab: Tab?
     @Published private(set) var selectedTabOrder: Int = 0
     @Published private(set) var theme: Theme = .light
+    @Published private(set) var isNetworkReachable = true
     
     private let themeService: SetThemeService & GetThemeService
     
@@ -96,6 +107,10 @@ class SettingsRootStore: ObservableObject {
                 self.theme = currentTheme
             }
         }
+    }
+    
+    func handleIsNetworkReachableChanged(_ isNetworkReachable: Bool) {
+        self.isNetworkReachable = isNetworkReachable
     }
     
     func handleTabSelected(_ tab: Tab) {

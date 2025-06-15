@@ -11,34 +11,44 @@ struct RootCoordinator: View {
     @ObservedObject var store: RootCoordinatorStore
     
     var body: some View {
-        if let mainTabsCoordinator = store.flowFeatures[.tabs] {
-            mainTabsCoordinator
-                .sheet(
-                    item: Binding(
-                        get: { store.destination?.sheet },
-                        set: { store.handleSheetChanged($0) }
-                    )
-                ) { sheet in
-                    switch sheet {
-                    case .auth:
-                        makeDestinationFeature()
-                    case .account:
-                        makeDestinationFeature()
+        ZStack {
+            if let mainTabsCoordinator = store.flowFeatures[.tabs] {
+                mainTabsCoordinator
+                    .sheet(
+                        item: Binding(
+                            get: { store.destination?.sheet },
+                            set: { store.handleSheetChanged($0) }
+                        )
+                    ) { sheet in
+                        switch sheet {
+                        case .auth:
+                            makeDestinationFeature()
+                        case .account:
+                            makeDestinationFeature()
+                        }
                     }
-                }
-                .fullScreenCover(
-                    item: Binding(
-                        get: { store.destination?.fullscreenCover },
-                        set: { store.handleFullscreenCoverChanged($0) }
-                    )
-                ) { destination in
-                    switch destination {
-                    case .onboarding:
-                        makeDestinationFeature()
+                    .fullScreenCover(
+                        item: Binding(
+                            get: { store.destination?.fullscreenCover },
+                            set: { store.handleFullscreenCoverChanged($0) }
+                        )
+                    ) { destination in
+                        switch destination {
+                        case .onboarding:
+                            makeDestinationFeature()
+                        }
                     }
+            } else {
+                Text("Something went wrong")
+            }
+            
+            VStack {
+                if store.isReachable == false {
+                    NetworkReachabilityBanner()
                 }
-        } else {
-            Text("Something went wrong")
+                Spacer()
+            }
+            .animation(.default, value: store.isReachable)
         }
     }
     

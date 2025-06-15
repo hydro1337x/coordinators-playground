@@ -16,7 +16,7 @@ class SettingsCoordinatorStore: ObservableObject {
     init(factory: SettingsCoordinatorFactory) {
         self.factory = factory
         
-        rootFeature = factory.makeRootScreen()
+        rootFeature = factory.makeRootFeature()
     }
     
     

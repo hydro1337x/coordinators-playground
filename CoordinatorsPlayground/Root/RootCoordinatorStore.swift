@@ -11,6 +11,7 @@ import Foundation
 class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator {
     @Published private(set) var flow: Flow
     @Published private(set) var destination: Destination?
+    @Published private(set) var isReachable: Bool?
     
     private(set) var flowFeatures: [Flow: Feature] = [:]
     private(set) var destinationFeature: Feature?
@@ -68,6 +69,10 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
             destinationFeature = nil
             destination = nil
         }
+    }
+    
+    func setReachability(isReachable: Bool) {
+        self.isReachable = isReachable
     }
     
     private func makeFeature(for flow: Flow) {
