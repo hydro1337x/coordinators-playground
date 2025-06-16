@@ -13,7 +13,7 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
     @Published private(set) var destination: Destination?
     @Published private(set) var isReachable: Bool?
     
-    private(set) var flowFeatures: [Flow: Feature] = [:]
+    private(set) var flowFeature: Feature?
     private(set) var destinationFeature: Feature?
     
     private let authStateService: AuthStateValueService
@@ -75,6 +75,10 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
         self.isReachable = isReachable
     }
     
+    func showSpecialFlow() {
+        show(flow: .special)
+    }
+    
     private func makeFeature(for flow: Flow) {
         switch flow {
         case .tabs:
@@ -87,7 +91,14 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
                 }
             )
             
-            flowFeatures[flow] = mainTabsCoordinator
+            flowFeature = mainTabsCoordinator
+        case .special:
+            let specialFlowCoordinator = factory.makeSpecialFlowCoordinator(
+                onMainFlowButtonTapped: { [weak self] in
+                    self?.show(flow: .tabs)
+                }
+            )
+            flowFeature = specialFlowCoordinator
         }
     }
     
@@ -115,6 +126,11 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
                 destinationFeature = feature
             }
         }
+    }
+    
+    private func show(flow: Flow) {
+        makeFeature(for: flow)
+        self.flow = flow
     }
     
     private func present(destination: Destination) {
@@ -149,6 +165,7 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
 extension RootCoordinatorStore {
     enum Flow: Hashable, Codable {
         case tabs
+        case special
     }
     
     enum Destination: Identifiable, Hashable, Codable {

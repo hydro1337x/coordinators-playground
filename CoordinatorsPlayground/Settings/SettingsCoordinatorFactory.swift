@@ -22,6 +22,9 @@ struct DefaultSettingsCoordinatorFactory: SettingsCoordinatorFactory {
         let store = SettingsRootStore(activeTabs: mainTabsCoordinatorAdapter.activeTabs, themeService: themeService)
         mainTabsCoordinatorAdapter.subscribe(to: store.$activeTabs)
         rootCoordinatorAdapter.subscribe(to: store.$isNetworkReachable)
+        store.onShowSpecialFlowButtonTapped = {
+            rootCoordinatorAdapter.onShowSpecialFlow()
+        }
         let view = SettingsRootScreen(store: store)
         return Feature(view: view, store: store)
     }

@@ -80,6 +80,10 @@ struct SettingsRootScreen: View {
                         set: { store.handleIsNetworkReachableChanged($0) }
                     )
                 )
+                
+                Button("Show Special Flow") {
+                    store.handleSpecialFlowButtonTapped()
+                }
             }
         }
         .onAppear(perform: store.handleOnAppear)
@@ -94,6 +98,8 @@ class SettingsRootStore: ObservableObject {
     @Published private(set) var theme: Theme = .light
     @Published private(set) var isNetworkReachable = true
     
+    var onShowSpecialFlowButtonTapped: () -> Void = unimplemented()
+    
     private let themeService: SetThemeService & GetThemeService
     
     init(activeTabs: [Tab], themeService: SetThemeService & GetThemeService) {
@@ -107,6 +113,10 @@ class SettingsRootStore: ObservableObject {
                 self.theme = currentTheme
             }
         }
+    }
+    
+    func handleSpecialFlowButtonTapped() {
+        onShowSpecialFlowButtonTapped()
     }
     
     func handleIsNetworkReachableChanged(_ isNetworkReachable: Bool) {

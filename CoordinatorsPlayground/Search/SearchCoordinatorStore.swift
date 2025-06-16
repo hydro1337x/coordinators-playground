@@ -27,6 +27,10 @@ class SearchCoordinatorStore: ObservableObject, TabsCoordinator {
         router.register(routable: self)
     }
     
+    deinit {
+        print("Deinited: \(String(describing: self))")
+    }
+    
     func handleTabChanged(_ tab: Tab) {
         self.tab = tab
     }

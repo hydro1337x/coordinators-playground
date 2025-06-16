@@ -96,8 +96,8 @@ extension Restorable {
             childFeatures.append(contentsOf: tabsCoordinator.tabFeatureValues)
         }
         
-        if let flowCoordinator = self as? (any FlowCoordinator) {
-            childFeatures.append(contentsOf: flowCoordinator.flowFeatureValues)
+        if let flowCoordinator = self as? (any FlowCoordinator), let feature = flowCoordinator.flowFeature {
+            childFeatures.append(feature)
         }
         
         let childRoutables: [any Restorable] = childFeatures.compactMap { $0.cast() }

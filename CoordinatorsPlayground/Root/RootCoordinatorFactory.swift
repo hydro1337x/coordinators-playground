@@ -14,6 +14,7 @@ protocol RootCoordinatorFactory {
     func makeAccountCoordinator(onFinished: @escaping () -> Void) -> Feature
     func makeOnboardingCoordinator(onFinished: @escaping () -> Void) -> Feature
     func makeMainTabsCoordinator(onAccountButtonTapped: @escaping () -> Void, onLoginButtonTapped: @escaping () -> Void) -> Feature
+    func makeSpecialFlowCoordinator(onMainFlowButtonTapped: @escaping () -> Void) -> Feature
 }
 
 struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
@@ -85,6 +86,13 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
                 AnyView(FloatingStack(store: floatingStackStore))
             }
         )
+        return Feature(view: view, store: store)
+    }
+    
+    func makeSpecialFlowCoordinator(onMainFlowButtonTapped: @escaping () -> Void) -> Feature {
+        let store = SpecialFlowCoordinatorStore()
+        store.onMainFlowButtonTapped = onMainFlowButtonTapped
+        let view = SpecialFlowCoordinator(store: store)
         return Feature(view: view, store: store)
     }
 }

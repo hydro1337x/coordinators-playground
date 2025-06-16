@@ -62,6 +62,7 @@ final class Dependencies {
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
         rootCoordinatorAdapter.onReachabilityChanged = store.setReachability(isReachable:)
+        rootCoordinatorAdapter.onShowSpecialFlow = store.showSpecialFlow
         navigationObserver.register(root: store)
         navigationObserver.observe(observable: store, flow: \.$flow, destination: \.$destination)
         let view = RootCoordinator(

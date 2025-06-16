@@ -191,7 +191,7 @@ extension NavigationObserver {
             childBranches.append(contentsOf: childBranch)
         }
 
-        if let flowObservable = observable as? (any FlowCoordinator), let childObservable = flowObservable.erasedFlowFeatures[AnyHashable(flowObservable.flow)]?.cast(to: Coordinator.self) {
+        if let flowObservable = observable as? (any FlowCoordinator), let childObservable = flowObservable.flowFeature?.cast(to: Coordinator.self) {
             let childBranch = buildNavigationBranches(from: childObservable, context: .flow, currentElevation: elevation)
             childBranches.append(contentsOf: childBranch)
         }
@@ -223,18 +223,6 @@ private extension TabsCoordinator {
         var dict: [AnyHashable: Feature] = [:]
         
         for (key, value) in tabFeatures {
-            dict[AnyHashable(key)] = value
-        }
-        
-        return dict
-    }
-}
-
-private extension FlowCoordinator {
-    var erasedFlowFeatures: [AnyHashable: Feature] {
-        var dict: [AnyHashable: Feature] = [:]
-        
-        for (key, value) in flowFeatures {
             dict[AnyHashable(key)] = value
         }
         

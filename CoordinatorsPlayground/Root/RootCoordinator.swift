@@ -12,8 +12,9 @@ struct RootCoordinator: View {
     
     var body: some View {
         ZStack {
-            if let mainTabsCoordinator = store.flowFeatures[.tabs] {
-                mainTabsCoordinator
+            switch store.flow {
+            case .tabs:
+                makeFlowFeature()
                     .sheet(
                         item: Binding(
                             get: { store.destination?.sheet },
@@ -38,8 +39,8 @@ struct RootCoordinator: View {
                             makeDestinationFeature()
                         }
                     }
-            } else {
-                Text("Something went wrong")
+            case .special:
+                makeFlowFeature()
             }
             
             VStack {
@@ -49,6 +50,15 @@ struct RootCoordinator: View {
                 Spacer()
             }
             .animation(.default, value: store.isReachable)
+        }
+    }
+    
+    @ViewBuilder
+    func makeFlowFeature() -> some View {
+        if let view = store.flowFeature {
+            view
+        } else {
+            Text("Something went wrong")
         }
     }
     

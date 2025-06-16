@@ -10,6 +10,8 @@ import Combine
 
 final class RootCoordinatorAdapter {
     var onReachabilityChanged: (Bool) -> Void = unimplemented()
+    var onShowSpecialFlow: () -> Void = unimplemented()
+    
     private var cancellables: Set<AnyCancellable> = []
     
     func subscribe(to reachabilityPublisher: Published<Bool>.Publisher) {

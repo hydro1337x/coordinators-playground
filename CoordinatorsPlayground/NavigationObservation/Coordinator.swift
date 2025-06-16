@@ -31,7 +31,7 @@ protocol TabsCoordinator: Coordinator {
 protocol FlowCoordinator: Coordinator {
     associatedtype Flow: Hashable
     var flow: Flow { get }
-    var flowFeatures: [Flow: Feature] { get }
+    var flowFeature: Feature? { get }
 }
 
 extension StackCoordinator {
@@ -43,11 +43,5 @@ extension StackCoordinator {
 extension TabsCoordinator {
     var tabFeatureValues: [Feature] {
         Array(tabFeatures.values)
-    }
-}
-
-extension FlowCoordinator {
-    var flowFeatureValues: [Feature] {
-        Array(flowFeatures.values)
     }
 }
