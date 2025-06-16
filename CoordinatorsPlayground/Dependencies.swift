@@ -50,8 +50,8 @@ final class Dependencies {
     func makeRootCoordinator() -> Feature {
         let router = RootRouter<RootStep>()
         let restorer = DefaultRestorer<RootState>()
-        rootRouterAdapter.onUnhandledRoute = { route in
-            return await router.onUnhandledRoute(route)
+        rootRouterAdapter.onUnhandledRoute = { [weak router] route in
+            return await router?.onUnhandledRoute(route) ?? false
         }
         let store = RootCoordinatorStore(
             flow: .tabs,
@@ -61,8 +61,12 @@ final class Dependencies {
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
-        rootCoordinatorAdapter.onReachabilityChanged = store.setReachability(isReachable:)
-        rootCoordinatorAdapter.onShowSpecialFlow = store.showSpecialFlow
+        rootCoordinatorAdapter.onReachabilityChanged = { [weak store] isReachable in
+            store?.setReachability(isReachable: isReachable)
+        }
+        rootCoordinatorAdapter.onShowSpecialFlow = { [weak store] in
+            store?.showSpecialFlow()
+        }
         navigationObserver.register(root: store)
         navigationObserver.observe(observable: store, flow: \.$flow, destination: \.$destination)
         let view = RootCoordinator(

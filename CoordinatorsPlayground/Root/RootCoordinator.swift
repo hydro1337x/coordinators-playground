@@ -51,6 +51,7 @@ struct RootCoordinator: View {
             }
             .animation(.default, value: store.isReachable)
         }
+        .animation(.default, value: store.flow)
     }
     
     @ViewBuilder

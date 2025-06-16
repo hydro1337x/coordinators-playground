@@ -74,9 +74,15 @@ struct DefaultRootCoordinatorFactory: RootCoordinatorFactory {
             router: LoggingRouterDecorator(decorating: router),
             restorer: LoggingRestorerDecorator(wrapping: restorer)
         )
-        mainTabsCoordinatorAdapter.onHideTabBar = store.hideTabBar
-        mainTabsCoordinatorAdapter.onShowTabBar = store.showTabBar
-        mainTabsCoordinatorAdapter.onActiveTabsChanged = store.setActiveTabs
+        mainTabsCoordinatorAdapter.onHideTabBar = { [weak store] in
+            store?.hideTabBar()
+        }
+        mainTabsCoordinatorAdapter.onShowTabBar = { [weak store] in
+            store?.showTabBar()
+        }
+        mainTabsCoordinatorAdapter.onActiveTabsChanged = { [weak store] tabs in
+            store?.setActiveTabs(tabs)
+        }
         store.onAccountButtonTapped = onAccountButtonTapped
         store.onLoginButtonTapped = onLoginButtonTapped
         navigationObserver.observe(observable: store, state: \.$tab)
