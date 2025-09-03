@@ -28,7 +28,7 @@ final class FloatingStackStore: ObservableObject {
             }
             .assign(to: &$dynamicPadding)
         
-        simulateSequence()
+//        simulateSequence()
     }
     
     func enqueue(message: FeedbackMessage) {

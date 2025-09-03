@@ -88,6 +88,8 @@ final class AppStore: ObservableObject {
         /**
          Test via command:
          xcrun simctl openurl booted "coordinatorsplayground://deeplink?payload=base64EncodedString"
+         
+         Check README.md for more info
          */
     }
     
