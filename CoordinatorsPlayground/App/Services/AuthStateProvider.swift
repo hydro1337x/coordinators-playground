@@ -7,24 +7,6 @@
 
 import Foundation
 
-protocol AuthStateValueService: Sendable {
-    var currentValue: AuthState { get async }
-}
-
-protocol AuthStateStreamService: Sendable {
-    var values: AsyncStream<AuthState> { get async }
-}
-
-protocol SetAuthStateService: Sendable {
-    func setState(_ newState: AuthState) async
-}
-
-enum AuthState {
-    case loggedIn
-    case loginInProgress
-    case loggedOut
-}
-
 actor AuthStateProvider: AuthStateValueService, AuthStateStreamService, SetAuthStateService {
     private struct Subscriber {
         let id: UUID

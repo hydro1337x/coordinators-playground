@@ -9,14 +9,14 @@ import Foundation
 import Combine
 
 final class MainTabsCoordinatorAdapter {
-    let activeTabs: [Tab] = [.home, .search, .settings]
+    let activeTabs: [MainTab] = [.home, .search, .settings]
     var onHideTabBar: () -> Void = unimplemented()
     var onShowTabBar: () -> Void = unimplemented()
-    var onActiveTabsChanged: ([Tab]) -> Void = unimplemented()
+    var onActiveTabsChanged: ([MainTab]) -> Void = unimplemented()
     
     private var cancellables: Set<AnyCancellable> = []
     
-    func subscribe(to tabsPublisher: Published<[Tab]>.Publisher) {
+    func subscribe(to tabsPublisher: Published<[MainTab]>.Publisher) {
         tabsPublisher
             .dropFirst()
             .sink { [weak self] tabs in

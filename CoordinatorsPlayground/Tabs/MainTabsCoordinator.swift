@@ -46,7 +46,7 @@ struct MainTabsCoordinator: View {
     }
 }
 
-extension Tab {
+extension MainTab {
     var image: Image {
         switch self {
         case .home:

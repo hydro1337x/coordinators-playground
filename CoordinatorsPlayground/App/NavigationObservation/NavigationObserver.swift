@@ -6,8 +6,9 @@
 //
 
 import Foundation
+import Combine
 
-enum NavigationContext: String {
+private enum NavigationContext: String {
     case root
     case tab
     case stack
@@ -15,22 +16,20 @@ enum NavigationContext: String {
     case flow
 }
 
-struct NavigationNode {
+private struct NavigationNode {
     let observable: Coordinator
     let context: NavigationContext
     let elevation: Int
 }
 
-struct NavigationState {
+private struct NavigationState {
     let state: AnyHashable
     let observable: Coordinator
     let elevation: Int
     let depth: Int
 }
 
-typealias NavigationBranch = [NavigationNode]
-
-import Combine
+private typealias NavigationBranch = [NavigationNode]
 
 @MainActor
 class NavigationObserver {
@@ -101,8 +100,8 @@ class NavigationObserver {
     }
 }
 
-extension NavigationObserver {
-    private func resolveTopVisibleState() {
+private extension NavigationObserver {
+    func resolveTopVisibleState() {
         guard let root else { return }
         let branches = buildNavigationBranches(from: root)
         let topVisibleStates = branches.compactMap {
@@ -126,7 +125,7 @@ extension NavigationObserver {
         }
     }
     
-    private func resolveTopVisibleState(in branch: NavigationBranch) -> NavigationState? {
+    func resolveTopVisibleState(in branch: NavigationBranch) -> NavigationState? {
         var highestElevation = -1
         var topVisibleState: NavigationState?
 
@@ -158,7 +157,7 @@ extension NavigationObserver {
         return topVisibleState
     }
     
-    private func buildNavigationBranches(
+    func buildNavigationBranches(
         from observable: Coordinator,
         context: NavigationContext = .root,
         currentElevation: Int = 0
@@ -203,29 +202,5 @@ extension NavigationObserver {
 
         // Attach current node to each child branch
         return childBranches.map { [node] + $0 }
-    }
-}
-
-private extension StackCoordinator {
-    var erasedPathFeatures: [AnyHashable: Feature] {
-        var dict: [AnyHashable: Feature] = [:]
-        
-        for (key, value) in pathFeatures {
-            dict[AnyHashable(key)] = value
-        }
-        
-        return dict
-    }
-}
-
-private extension TabsCoordinator {
-    var erasedTabFeatures: [AnyHashable: Feature] {
-        var dict: [AnyHashable: Feature] = [:]
-        
-        for (key, value) in tabFeatures {
-            dict[AnyHashable(key)] = value
-        }
-        
-        return dict
     }
 }

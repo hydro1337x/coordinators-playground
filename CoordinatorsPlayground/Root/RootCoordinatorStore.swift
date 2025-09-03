@@ -20,7 +20,7 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
     private let authService: AuthTokenLoginService
     private let factory: RootCoordinatorFactory
     let router: any Router<RootStep>
-    let restorer: any Restorer<RootState>
+    let restorer: any Restorer<RootRestorableState>
     
     init(
         flow: Flow,
@@ -29,7 +29,7 @@ class RootCoordinatorStore: ObservableObject, FlowCoordinator, ModalCoordinator 
         authService: AuthTokenLoginService,
         factory: RootCoordinatorFactory,
         router: any Router<RootStep>,
-        restorer: any Restorer<RootState>
+        restorer: any Restorer<RootRestorableState>
     ) {
         self.authStateService = authStateService
         self.authService = authService
@@ -218,17 +218,17 @@ extension RootCoordinatorStore: Routable {
 }
 
 extension RootCoordinatorStore: Restorable {
-    func captureState() async -> RootState {
+    func captureState() async -> RootRestorableState {
         return .init(destination: destination, flow: flow)
     }
     
-    func restore(state: RootState) async {
+    func restore(state: RootRestorableState) async {
         guard let destination = state.destination else { return }
         present(destination: destination)
     }
 }
 
-struct RootState: Codable {
+struct RootRestorableState: Codable {
     let destination: RootCoordinatorStore.Destination?
     let flow: RootCoordinatorStore.Flow
 }

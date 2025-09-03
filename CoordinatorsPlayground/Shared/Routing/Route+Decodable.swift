@@ -1,42 +1,13 @@
 //
-//  DeepLinkParser.swift
+//  Route+Decodable.swift
 //  CoordinatorsPlayground
 //
-//  Created by Benjamin Macanovic on 10.05.2025..
+//  Created by Benjamin Macanovic on 17.06.2025..
 //
 
 import Foundation
 
-enum DeepLinkParser {
-    static func parse(_ url: URL) -> Route? {
-        guard
-            let urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false),
-            urlComponents.host == "deeplink",
-            let queryItems = urlComponents.queryItems,
-            let payload = queryItems.first(where: { $0.name == "payload" })?.value,
-            let data = Data(base64Encoded: payload)
-        else {
-            print("Invalid DeepLink payload")
-            return nil
-        }
-        
-        let route: Route?
-        
-        do {
-            route = try JSONDecoder().decode(Route.self, from: data)
-        } catch {
-            route = nil
-            print("Decoding DeepLink failed: \(error)")
-        }
-        
-        return route
-    }
-}
-
-struct Route: Decodable {
-    let step: Data
-    let children: [Route]
-
+extension Route: Decodable {
     enum CodingKeys: String, CodingKey {
         case step
         case children
@@ -56,7 +27,7 @@ struct Route: Decodable {
     }
 }
 
-enum JSONValue: Codable {
+private enum JSONValue: Codable {
     case string(String)
     case number(Double)
     case object([String: JSONValue])

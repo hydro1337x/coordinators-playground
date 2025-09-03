@@ -1,19 +1,11 @@
 //
-//  RestorableSnapshotService.swift
+//  UserDefaultsRestorableSnapshotService.swift
 //  CoordinatorsPlayground
 //
-//  Created by Benjamin Macanovic on 29.05.2025..
+//  Created by Benjamin Macanovic on 17.06.2025..
 //
 
 import Foundation
-
-protocol SaveRestorableSnapshotService: Sendable {
-    func save(snapshot: RestorableSnapshot) async
-}
-
-protocol RetrieveRestorableSnapshotService: Sendable {
-    func retrieveSnapshot() async -> RestorableSnapshot?
-}
 
 actor UserDefaultsRestorableSnapshotService: SaveRestorableSnapshotService, RetrieveRestorableSnapshotService {
     private let defaults = UserDefaults.standard

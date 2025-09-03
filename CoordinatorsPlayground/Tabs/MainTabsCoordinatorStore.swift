@@ -10,20 +10,20 @@ import SwiftUI
 
 @MainActor
 class MainTabsCoordinatorStore: ObservableObject, TabsCoordinator {
-    @Published private(set) var tab: Tab
+    @Published private(set) var tab: MainTab
     @Published private(set) var isTabBarVisible: Bool = true
-    @Published private(set) var activeTabs: [Tab]
+    @Published private(set) var activeTabs: [MainTab]
     
-    private(set) var tabFeatures: [Tab: Feature] = [:]
+    private(set) var tabFeatures: [MainTab: Feature] = [:]
     
     var onAccountButtonTapped: () -> Void = unimplemented()
     var onLoginButtonTapped: () -> Void = unimplemented()
     
     private let factory: MainTabsCoordinatorFactory
     let router: any Router<TabsStep>
-    let restorer: any Restorer<TabsState>
+    let restorer: any Restorer<TabsRestorableState>
     
-    init(selectedTab: Tab, activeTabs: [Tab], factory: MainTabsCoordinatorFactory, router: any Router<TabsStep>, restorer: any Restorer<TabsState>) {
+    init(selectedTab: MainTab, activeTabs: [MainTab], factory: MainTabsCoordinatorFactory, router: any Router<TabsStep>, restorer: any Restorer<TabsRestorableState>) {
         self.factory = factory
         self.router = router
         self.restorer = restorer
@@ -40,7 +40,7 @@ class MainTabsCoordinatorStore: ObservableObject, TabsCoordinator {
         print("Deinited: \(String(describing: self))")
     }
     
-    private func makeFeature(for tab: Tab) {
+    private func makeFeature(for tab: MainTab) {
         switch tab {
         case .home:
             let feature = factory.makeHomeCoordinator(
@@ -76,23 +76,17 @@ class MainTabsCoordinatorStore: ObservableObject, TabsCoordinator {
         isTabBarVisible = true
     }
     
-    func handleTabChanged(_ tab: Tab) {
+    func handleTabChanged(_ tab: MainTab) {
         self.tab = tab
     }
     
-    func setActiveTabs(_ tabs: [Tab]) {
+    func setActiveTabs(_ tabs: [MainTab]) {
         self.activeTabs = tabs
     }
     
-    private func show(tab: Tab) {
+    private func show(tab: MainTab) {
         self.tab = tab
     }
-}
-
-enum Tab: CaseIterable, Codable {
-    case home
-    case search
-    case settings
 }
 
 extension MainTabsCoordinatorStore: Routable {
@@ -112,17 +106,17 @@ extension MainTabsCoordinatorStore: Routable {
 }
 
 extension MainTabsCoordinatorStore: Restorable {
-    func captureState() async -> TabsState {
+    func captureState() async -> TabsRestorableState {
         return .init(tab: tab)
     }
     
-    func restore(state: TabsState) async {
+    func restore(state: TabsRestorableState) async {
         show(tab: state.tab)
     }
 }
 
-struct TabsState: Codable {
-    let tab: MainTabsCoordinatorStore.Tab
+struct TabsRestorableState: Codable {
+    let tab: MainTab
 }
 
 enum TabsStep: Decodable {

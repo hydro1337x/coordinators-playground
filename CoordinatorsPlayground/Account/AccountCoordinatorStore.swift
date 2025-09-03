@@ -20,9 +20,9 @@ class AccountCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordina
     
     private let factory: AccountCoordinatorFactory
     let router: any Router<AccountStep>
-    let restorer: any Restorer<AccountState>
+    let restorer: any Restorer<AccountRestorableState>
     
-    init(factory: AccountCoordinatorFactory, router: any Router<AccountStep>, restorer: any Restorer<AccountState>) {
+    init(factory: AccountCoordinatorFactory, router: any Router<AccountStep>, restorer: any Restorer<AccountRestorableState>) {
         self.factory = factory
         self.router = router
         self.restorer = restorer
@@ -145,17 +145,17 @@ extension AccountCoordinatorStore: Routable {
 }
 
 extension AccountCoordinatorStore: Restorable {
-    func captureState() async -> AccountState {
+    func captureState() async -> AccountRestorableState {
         return .init(path: path, destination: destination)
     }
     
-    func restore(state: AccountState) async {
+    func restore(state: AccountRestorableState) async {
         state.path.forEach { makeFeature(for: $0) }
         self.path = state.path
     }
 }
 
-struct AccountState: Codable {
+struct AccountRestorableState: Codable {
     let path: [AccountCoordinatorStore.Path]
     let destination: AccountCoordinatorStore.Destination?
 }

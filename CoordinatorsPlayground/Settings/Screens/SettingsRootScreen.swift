@@ -92,8 +92,8 @@ struct SettingsRootScreen: View {
 
 @MainActor
 class SettingsRootStore: ObservableObject {
-    @Published private(set) var activeTabs: [Tab]
-    @Published private(set) var selectedTab: Tab?
+    @Published private(set) var activeTabs: [MainTab]
+    @Published private(set) var selectedTab: MainTab?
     @Published private(set) var selectedTabOrder: Int = 0
     @Published private(set) var theme: Theme = .light
     @Published private(set) var isNetworkReachable = true
@@ -102,7 +102,7 @@ class SettingsRootStore: ObservableObject {
     
     private let themeService: SetThemeService & GetThemeService
     
-    init(activeTabs: [Tab], themeService: SetThemeService & GetThemeService) {
+    init(activeTabs: [MainTab], themeService: SetThemeService & GetThemeService) {
         self.activeTabs = activeTabs
         self.themeService = themeService
     }
@@ -123,7 +123,7 @@ class SettingsRootStore: ObservableObject {
         self.isNetworkReachable = isNetworkReachable
     }
     
-    func handleTabSelected(_ tab: Tab) {
+    func handleTabSelected(_ tab: MainTab) {
         selectedTab = tab
         if let selectedTabOrder = activeTabs.firstIndex(of: tab) {
             self.selectedTabOrder = selectedTabOrder
@@ -163,7 +163,7 @@ class SettingsRootStore: ObservableObject {
     }
 }
 
-private extension Tab {
+private extension MainTab {
     var title: String {
         switch self {
         case .home:

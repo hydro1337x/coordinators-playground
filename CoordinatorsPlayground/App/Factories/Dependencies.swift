@@ -19,7 +19,7 @@ final class Dependencies {
     lazy var themeStore = ThemeStore(themeService: themeService)
     lazy var snapshotService = UserDefaultsRestorableSnapshotService()
     lazy var authStateService = AuthStateProvider()
-    lazy var authService = AuthService(service: authStateService)
+    lazy var authService = DefaultAuthService(service: authStateService)
     lazy var floatingStackStore = FloatingStackStore(
         clock: ContinuousClock(),
         topVisibleState: navigationObserver.$topVisibleState.eraseToAnyPublisher()
@@ -49,7 +49,7 @@ final class Dependencies {
     
     func makeRootCoordinator() -> Feature {
         let router = RootRouter<RootStep>()
-        let restorer = DefaultRestorer<RootState>()
+        let restorer = DefaultRestorer<RootRestorableState>()
         rootRouterAdapter.onUnhandledRoute = { [weak router] route in
             return await router?.onUnhandledRoute(route) ?? false
         }

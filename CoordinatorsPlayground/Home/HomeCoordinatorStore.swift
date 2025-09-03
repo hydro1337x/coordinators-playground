@@ -23,9 +23,9 @@ class HomeCoordinatorStore: ObservableObject, StackCoordinator, ModalCoordinator
     private let authStateService: AuthStateStreamService
     private let factory: HomeCoordinatorFactory
     let router: any Router<HomeStep>
-    let restorer: any Restorer<HomeState>
+    let restorer: any Restorer<HomeRestorableState>
     
-    init(authStateService: AuthStateStreamService, factory: HomeCoordinatorFactory, router: any Router<HomeStep>, restorer: any Restorer<HomeState>) {
+    init(authStateService: AuthStateStreamService, factory: HomeCoordinatorFactory, router: any Router<HomeStep>, restorer: any Restorer<HomeRestorableState>) {
         self.authStateService = authStateService
         self.factory = factory
         self.router = router
@@ -181,11 +181,11 @@ extension HomeCoordinatorStore: Routable {
 }
 
 extension HomeCoordinatorStore: Restorable {
-    func captureState() async -> HomeState {
+    func captureState() async -> HomeRestorableState {
         return .init(destination: destination, path: path)
     }
     
-    func restore(state: HomeState) async {
+    func restore(state: HomeRestorableState) async {
         if let destination = state.destination {
             present(destination: destination)
         }
@@ -195,7 +195,7 @@ extension HomeCoordinatorStore: Restorable {
     }
 }
 
-struct HomeState: Codable {
+struct HomeRestorableState: Codable {
     let destination: HomeCoordinatorStore.Destination?
     let path: [HomeCoordinatorStore.Path]
 }
